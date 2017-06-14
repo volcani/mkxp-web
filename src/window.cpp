@@ -388,29 +388,16 @@ struct WindowPrivate
 
 	void ensureBaseTexReady()
 	{
-		/* Make sure texture is big enough */
-		int newW = baseTex.width;
-		int newH = baseTex.height;
-		bool resizeNeeded = false;
+		/* Make sure texture is properly sized */
+		int newW = findNextPow2(size.x);
+		int newH = findNextPow2(size.y);
 
-		if (size.x > baseTex.width)
+		if (newW != baseTex.width || newH != baseTex.height)
 		{
-			newW = findNextPow2(size.x);
-			resizeNeeded = true;
+			shState->texPool().release(baseTex);
+			baseTex = shState->texPool().request(newW, newH);
+			baseTexDirty = true;
 		}
-		if (size.y > baseTex.height)
-		{
-			newH = findNextPow2(size.y);
-			resizeNeeded = true;
-		}
-
-		if (!resizeNeeded)
-			return;
-
-		shState->texPool().release(baseTex);
-		baseTex = shState->texPool().request(newW, newH);
-
-		baseTexDirty = true;
 	}
 
 	void redrawBaseTex()

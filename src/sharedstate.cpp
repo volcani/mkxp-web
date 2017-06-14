@@ -263,39 +263,26 @@ void SharedState::bindTex()
 
 void SharedState::ensureTexSize(int minW, int minH, Vec2i &currentSizeOut)
 {
-	if (minW > p->globalTexW)
+	minW = findNextPow2(minW); minH = findNextPow2(minH);
+	
+	if (minW != p->globalTexW || minH != p->globalTexH)
 	{
+		p->globalTexW = minW;
+		p->globalTexH = minH;
 		p->globalTexDirty = true;
-		p->globalTexW = findNextPow2(minW);
 	}
-
-	if (minH > p->globalTexH)
-	{
-		p->globalTexDirty = true;
-		p->globalTexH = findNextPow2(minH);
-	}
-
+	
 	currentSizeOut = Vec2i(p->globalTexW, p->globalTexH);
 }
 
 TEXFBO &SharedState::gpTexFBO(int minW, int minH)
 {
-	bool needResize = false;
-
-	if (minW > p->gpTexFBO.width)
+	minW = findNextPow2(minW); minH = findNextPow2(minH);
+	
+	if (minW != p->gpTexFBO.width || minH != p->gpTexFBO.height)
 	{
-		p->gpTexFBO.width = findNextPow2(minW);
-		needResize = true;
-	}
-
-	if (minH > p->gpTexFBO.height)
-	{
-		p->gpTexFBO.height = findNextPow2(minH);
-		needResize = true;
-	}
-
-	if (needResize)
-	{
+		p->gpTexFBO.width = minW;
+		p->gpTexFBO.height = minH;
 		TEX::bind(p->gpTexFBO.tex);
 		TEX::allocEmpty(p->gpTexFBO.width, p->gpTexFBO.height);
 	}
