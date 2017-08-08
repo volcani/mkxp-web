@@ -396,6 +396,7 @@ void EventThread::process(RGSSThreadData &rtData)
 		case SDL_FINGERUP :
 			i = event.tfinger.fingerId;
 			memset(&touchState.fingers[i], 0, sizeof(touchState.fingers[0]));
+			touchState.ignoreMouse = false;
 			break;
 
 		default :

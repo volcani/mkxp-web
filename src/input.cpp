@@ -192,6 +192,15 @@ struct MsBinding : public Binding
 
 	bool sourceActive() const
 	{
+#ifdef __ANDROID__
+		if (index == 1 && EventThread::touchState.ignoreMouse == false)
+		{
+			for (size_t i = 0; i < MAX_FINGERS; ++i)
+			{
+				if (EventThread::touchState.fingers[i].down) return true;
+			}
+		}
+#endif		
 		return EventThread::mouseState.buttons[index];
 	}
 
@@ -266,7 +275,10 @@ struct OlBinding : public Binding
 			{
 				if ((x >= olb.x && x <= olb.x + olb.u.r.width)
 				&&   y >= olb.y && y <= olb.y + olb.u.r.height)
+				{
+					EventThread::touchState.ignoreMouse = true;
 					return true;
+				}
 
 				break;
 			}
@@ -277,7 +289,10 @@ struct OlBinding : public Binding
 				int d = sqrt(dx*dx + dy*dy);
 
 				if (d <= olb.u.c.radius)
+				{
+					EventThread::touchState.ignoreMouse = true;
 					return true;
+				}
 
 				break;
 			}
@@ -290,7 +305,10 @@ struct OlBinding : public Binding
 				s2 = areaSign(x, y, olb.u.t.x2, olb.u.t.y2, olb.x, olb.y) < 0;
 
 				if ((s0 == s1) && (s1 == s2))
+				{
+					EventThread::touchState.ignoreMouse = true;
 					return true;
+				}
 
 				break;
 			}
@@ -549,8 +567,8 @@ struct InputPrivate
 		bindings.clear();
 
 		appendBindings(kbStatBindings);
-		appendBindings(msBindings);
 		appendBindings(olBindings);
+		appendBindings(msBindings);
 
 		appendBindings(kbBindings);
 		appendBindings(jsABindings);
@@ -782,6 +800,17 @@ int Input::dir8Value()
 int Input::mouseX()
 {
 	RGSSThreadData &rtData = shState->rtData();
+	
+#ifdef __ANDROID__ 
+	for (auto i : p->olBindings) if (i.sourceActive()) return -1;
+	if (EventThread::touchState.ignoreMouse == false)
+		for (size_t i = 0; i < MAX_FINGERS; ++i)
+			{
+				EventThread::FingerState &f = EventThread::touchState.fingers[i];
+				if (!f.down) continue;
+				return (f.x - rtData.screenOffset.x) * rtData.sizeResoRatio.x;
+			}
+#endif
 
 	return (EventThread::mouseState.x - rtData.screenOffset.x) * rtData.sizeResoRatio.x;
 }
@@ -790,6 +819,17 @@ int Input::mouseY()
 {
 	RGSSThreadData &rtData = shState->rtData();
 
+#ifdef __ANDROID__ 
+	for (auto i : p->olBindings) if (i.sourceActive()) return -1;
+	if (EventThread::touchState.ignoreMouse == false)
+		for (size_t i = 0; i < MAX_FINGERS; ++i)
+			{
+				EventThread::FingerState &f = EventThread::touchState.fingers[i];
+				if (!f.down) continue;
+				return (f.y - rtData.screenOffset.y) * rtData.sizeResoRatio.y;
+			}
+#endif
+	
 	return (EventThread::mouseState.y - rtData.screenOffset.y) * rtData.sizeResoRatio.y;
 }
 

@@ -68,6 +68,7 @@ public:
 
 	struct TouchState
 	{
+		bool ignoreMouse;
 		FingerState fingers[MAX_FINGERS];
 	};
 
