@@ -1079,7 +1079,8 @@ void Bitmap::drawText(const IntRect &rect, const char *str, int align)
 	Vec2i gpTexSize;
 	shState->ensureTexSize(txtSurf->w, txtSurf->h, gpTexSize);
 
-	bool fastBlit = !p->touchesTaintedArea(posRect) && txtAlpha == 1.0f;
+	/* Disable alpha for more performance*/
+	bool fastBlit = !p->touchesTaintedArea(posRect); //&& txtAlpha == 1.0f;
 
 	if (fastBlit)
 	{
@@ -1196,7 +1197,8 @@ void Bitmap::drawText(const IntRect &rect, const char *str, int align)
 	}
 
 	SDL_FreeSurface(txtSurf);
-	p->addTaintedArea(posRect);
+	/* Remove this for a performance advantage, with a risk */
+	/* p->addTaintedArea(posRect); */
 
 	p->onModified();
 }
