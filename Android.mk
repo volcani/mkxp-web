@@ -2,7 +2,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE:= mkxp
-LOCAL_CPPFLAGS:=-DSHARED_FLUID -DGLES2_HEADER -DFULL_MKXP_PATH=\"/data/data/com.radial.exitfate/files/mkxp.conf\"
+LOCAL_CPPFLAGS:=-DSHARED_FLUID -DGLES2_HEADER -DFULL_MKXP_PATH=\"/sdcard/mkxp/mkxp.conf\"
 
 ifeq ($(TARGET_ARCH_ABI), armeabi)
 	LOCAL_CPPFLAGS += -DARCH_32BIT
