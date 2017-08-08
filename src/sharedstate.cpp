@@ -127,8 +127,9 @@ struct SharedStatePrivate
 			fclose(tmp);
 		}
 
+#ifndef __ANDROID__
 		fileSystem.addPath(".");
-
+#endif
 		for (size_t i = 0; i < config.rtps.size(); ++i)
 			fileSystem.addPath(config.rtps[i].c_str());
 
@@ -136,7 +137,6 @@ struct SharedStatePrivate
 			fileSystem.createPathCache();
 
 		fileSystem.initFontSets(fontState);
-
 		globalTexW = 128;
 		globalTexH = 64;
 
@@ -154,6 +154,7 @@ struct SharedStatePrivate
 
 		/* RGSS3 games will call setup_midi, so there's
 		 * no need to do it on startup */
+
 		if (rgssVer <= 2)
 			midiState.initIfNeeded(threadData->config);
 	}

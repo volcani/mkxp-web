@@ -267,6 +267,7 @@ void EventThread::process(RGSSThreadData &rtData)
 				break;
 			}
 
+#ifndef __ANDROID__
 			if (event.key.keysym.scancode == SDL_SCANCODE_F1)
 			{
 				if (!sMenu)
@@ -277,6 +278,7 @@ void EventThread::process(RGSSThreadData &rtData)
 
 				sMenu->raise();
 			}
+#endif
 
 			if (event.key.keysym.scancode == SDL_SCANCODE_F2)
 			{
