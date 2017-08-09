@@ -324,6 +324,11 @@ void EventThread::process(RGSSThreadData &rtData)
 				rtData.rqReset.set();
 				break;
 			}
+			
+			if (event.key.keysym.scancode == SDL_SCANCODE_AC_BACK)
+			{
+				mouseState.buttons[SDL_BUTTON_RIGHT] = true;
+			}
 
 			keyStates[event.key.keysym.scancode] = true;
 			break;
@@ -340,6 +345,11 @@ void EventThread::process(RGSSThreadData &rtData)
 			}
 
 			keyStates[event.key.keysym.scancode] = false;
+			if (event.key.keysym.scancode == SDL_SCANCODE_AC_BACK)
+			{
+				mouseState.buttons[SDL_BUTTON_RIGHT] = false;
+			}
+			
 			break;
 
 		case SDL_JOYBUTTONDOWN :
