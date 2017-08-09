@@ -102,7 +102,9 @@ int rgssThreadFun(void *userdata)
 		return 0;
 	}
 
-	if (!conf.enableBlitting)
+	std::string RendererName = glGetStringInt(GL_RENDERER);
+	bool checkAdreno = RendererName.find("Adreno") != std::string::npos;
+	if (!conf.enableBlitting || checkAdreno)
 		gl.BlitFramebuffer = 0;
 
 	gl.ClearColor(0, 0, 0, 1);
