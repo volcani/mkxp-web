@@ -276,7 +276,9 @@ struct OlBinding : public Binding
 				if ((x >= olb.x && x <= olb.x + olb.u.r.width)
 				&&   y >= olb.y && y <= olb.y + olb.u.r.height)
 				{
+#ifdef __ANDROID__
 					EventThread::touchState.ignoreMouse = true;
+#endif
 					return true;
 				}
 
@@ -290,7 +292,9 @@ struct OlBinding : public Binding
 
 				if (d <= olb.u.c.radius)
 				{
+#ifdef __ANDROID__
 					EventThread::touchState.ignoreMouse = true;
+#endif
 					return true;
 				}
 
@@ -306,7 +310,9 @@ struct OlBinding : public Binding
 
 				if ((s0 == s1) && (s1 == s2))
 				{
+#ifdef __ANDROID__
 					EventThread::touchState.ignoreMouse = true;
+#endif
 					return true;
 				}
 

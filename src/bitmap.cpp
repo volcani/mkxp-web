@@ -1079,8 +1079,13 @@ void Bitmap::drawText(const IntRect &rect, const char *str, int align)
 	Vec2i gpTexSize;
 	shState->ensureTexSize(txtSurf->w, txtSurf->h, gpTexSize);
 
-	/* Disable alpha for more performance*/
-	bool fastBlit = !p->touchesTaintedArea(posRect); //&& txtAlpha == 1.0f;
+	/* FIXME: Disable alpha while fastblitting 
+	 * for more performance on mobile devices */
+#ifdef __ANDROID__
+	bool fastBlit = !p->touchesTaintedArea(posRect);
+#else
+	bool fastBlit = !p->touchesTaintedArea(posRect) && txtAlpha == 1.0f;
+#endif
 
 	if (fastBlit)
 	{
@@ -1197,8 +1202,12 @@ void Bitmap::drawText(const IntRect &rect, const char *str, int align)
 	}
 
 	SDL_FreeSurface(txtSurf);
-	/* Remove this for a performance advantage, with a risk */
-	/* p->addTaintedArea(posRect); */
+	
+	/* FIXME: Marking text areas as tainted
+	 * creates performance issues on Android */
+#ifndef __ANDROID__
+	p->addTaintedArea(posRect);
+#endif
 
 	p->onModified();
 }

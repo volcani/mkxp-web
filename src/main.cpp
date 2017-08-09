@@ -102,6 +102,10 @@ int rgssThreadFun(void *userdata)
 		return 0;
 	}
 
+	/* WORKAROUND: Disable blitting on Adreno devices
+	 * Many old generation devices have multiple rendering
+	 * issues including broken tilesets and text
+	 * TODO: Find a real fix for this */
 	std::string RendererName = glGetStringInt(GL_RENDERER);
 	bool checkAdreno = RendererName.find("Adreno") != std::string::npos;
 	if (!conf.enableBlitting || checkAdreno)

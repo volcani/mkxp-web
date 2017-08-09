@@ -145,7 +145,11 @@ std::set<T> setFromVec(const std::vector<T> &vec)
 typedef std::vector<std::string> StringVec;
 namespace po = boost::program_options;
 
+#ifdef __ANDROID__
 #define CONF_FILE FULL_MKXP_PATH
+#else
+#define CONF_FILE "mkxp.conf"
+#endif
 
 Config::Config()
 {}

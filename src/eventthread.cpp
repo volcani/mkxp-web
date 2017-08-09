@@ -324,11 +324,12 @@ void EventThread::process(RGSSThreadData &rtData)
 				rtData.rqReset.set();
 				break;
 			}
-			
+#ifdef __ANDROID__
 			if (event.key.keysym.scancode == SDL_SCANCODE_AC_BACK)
 			{
 				mouseState.buttons[SDL_BUTTON_RIGHT] = true;
 			}
+#endif
 
 			keyStates[event.key.keysym.scancode] = true;
 			break;
@@ -345,10 +346,12 @@ void EventThread::process(RGSSThreadData &rtData)
 			}
 
 			keyStates[event.key.keysym.scancode] = false;
+#ifdef __ANDROID__
 			if (event.key.keysym.scancode == SDL_SCANCODE_AC_BACK)
 			{
 				mouseState.buttons[SDL_BUTTON_RIGHT] = false;
 			}
+#endif
 			
 			break;
 
@@ -406,7 +409,9 @@ void EventThread::process(RGSSThreadData &rtData)
 		case SDL_FINGERUP :
 			i = event.tfinger.fingerId;
 			memset(&touchState.fingers[i], 0, sizeof(touchState.fingers[0]));
+#ifdef __ANDROID__
 			touchState.ignoreMouse = false;
+#endif
 			break;
 
 		default :

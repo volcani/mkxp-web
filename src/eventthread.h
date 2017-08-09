@@ -68,7 +68,9 @@ public:
 
 	struct TouchState
 	{
+#ifdef __ANDROID__
 		bool ignoreMouse;
+#endif
 		FingerState fingers[MAX_FINGERS];
 	};
 
