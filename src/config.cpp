@@ -146,7 +146,7 @@ typedef std::vector<std::string> StringVec;
 namespace po = boost::program_options;
 
 #ifdef __ANDROID__
-#define CONF_FILE FULL_MKXP_PATH
+#define CONF_FILE ""
 #else
 #define CONF_FILE "mkxp.conf"
 #endif
@@ -221,7 +221,11 @@ void Config::read(int argc, char *argv[])
 	}
 
 	/* Parse configuration file */
+#ifdef __ANDROID__
+	SDLRWStream confFile(argv[1], "r");
+#else
 	SDLRWStream confFile(CONF_FILE, "r");
+#endif
 
 	if (confFile)
 	{
