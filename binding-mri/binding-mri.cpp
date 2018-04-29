@@ -155,7 +155,9 @@ static void mriBindingInit()
 static void
 showMsg(const std::string &msg)
 {
-	shState->eThread().showMessageBox(msg.c_str());
+	printf("Show msg %s\n", msg.c_str()); 
+        return;
+//	shState->eThread().showMessageBox(msg.c_str());
 }
 
 static void printP(int argc, VALUE *argv,
@@ -341,6 +343,9 @@ static VALUE evalHelper(evalArg *arg)
 	return rb_funcall2(Qnil, rb_intern("eval"), ARRAY_SIZE(argv), argv);
 }
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 static VALUE evalString(VALUE string, VALUE filename, int *state)
 {
 	evalArg arg = { string, filename };
@@ -473,6 +478,10 @@ static void runRMXPScripts(BacktraceData &btData)
 
 	while (true)
 	{
+#ifdef __EMSCRIPTEN
+		emscripten_sleep(10);
+#endif	
+
 		for (long i = 0; i < scriptCount; ++i)
 		{
 			VALUE script = rb_ary_entry(scriptArray, i);
@@ -498,6 +507,9 @@ static void runRMXPScripts(BacktraceData &btData)
 			if (state)
 				break;
 		}
+
+		printf("tick\n");
+		shState->eThread().process(shState->rtData());
 
 		VALUE exc = rb_gv_get("$!");
 		if (rb_obj_class(exc) != getRbData()->exc[Reset])

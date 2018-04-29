@@ -318,7 +318,9 @@ private:
 
 /* Nanoseconds per second */
 #define NS_PER_S 1000000000
-
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 struct FPSLimiter
 {
 	uint64_t lastTickCount;
@@ -420,6 +422,7 @@ struct FPSLimiter
 private:
 	void delayTicks(uint64_t ticks)
 	{
+#ifndef __EMSCRIPTEN__
 #if defined(HAVE_NANOSLEEP)
 		struct timespec req;
 		uint64_t nsec = ticks / tickFreqNS;
@@ -441,6 +444,10 @@ private:
 		}
 #else
 		SDL_Delay(ticks / tickFreqMS);
+#endif
+#endif
+#ifdef __EMSCRIPTEN
+		emscripten_sleep(ticks /tickFreqMS);
 #endif
 	}
 };
