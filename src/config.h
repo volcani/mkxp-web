@@ -84,6 +84,7 @@ struct Config
 
 	int defScreenW;
 	int defScreenH;
+	std::string windowTitle;
 
 	int fixedFramerate;
 	bool frameSkip;
@@ -130,6 +131,12 @@ struct Config
 	std::vector<std::string> fontSubs;
 
 	std::vector<std::string> rubyLoadpaths;
+
+	/* Editor flags */
+	struct {
+		bool debug;
+		bool battleTest;
+	} editor;
 
 	/* Game INI contents */
 	struct {

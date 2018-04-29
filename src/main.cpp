@@ -240,6 +240,9 @@ int main(int argc, char *argv[])
 	conf.readGameINI();
 	conf.readOverlayDesc();
 
+	if (conf.windowTitle.empty())
+		conf.windowTitle = conf.game.title;
+
 	assert(conf.rgssVersion >= 1 && conf.rgssVersion <= 3);
 	printRgssVersion(conf.rgssVersion);
 
@@ -287,7 +290,7 @@ int main(int argc, char *argv[])
 	if (conf.fullscreen)
 		winFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-	win = SDL_CreateWindow(conf.game.title.c_str(),
+	win = SDL_CreateWindow(conf.windowTitle.c_str(),
 	                       SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 	                       conf.defScreenW, conf.defScreenH, winFlags);
 
@@ -365,13 +368,13 @@ int main(int argc, char *argv[])
 	if (rtData.rqTermAck)
 		SDL_WaitThread(rgssThread, 0);
 	else
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, conf.game.title.c_str(),
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, conf.windowTitle.c_str(),
 		                         "The RGSS script seems to be stuck and mkxp will now force quit", win);
 
 	if (!rtData.rgssErrorMsg.empty())
 	{
 		Debug() << rtData.rgssErrorMsg;
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, conf.game.title.c_str(),
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, conf.windowTitle.c_str(),
 		                         rtData.rgssErrorMsg.c_str(), win);
 	}
 
