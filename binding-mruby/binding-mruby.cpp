@@ -49,6 +49,10 @@
 #include "binding-types.h"
 #include "mrb-ext/marshal.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 static void mrbBindingExecute();
 static void mrbBindingTerminate();
 static void mrbBindingReset();
@@ -164,7 +168,7 @@ showExcMessageBox(mrb_state *mrb, mrb_value exc)
 	snprintf(msgBoxText, sizeof(msgBoxText), "Script '%s' line %d: %s occured.\n\n%s",
 	         mrbValueString(file), mrb_fixnum(line), excClass, mrbValueString(mesg));
 
-	shState->eThread().showMessageBox(msgBoxText, SDL_MESSAGEBOX_ERROR);
+	printf("Alert -  %s\n", msgBoxText);
 }
 
 static void
@@ -289,13 +293,16 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 		return;
 	}
 
-	int scriptCount = mrb_ary_len(scriptMrb, scriptArray);
+	int scriptCount = mrb_arY_len(scriptMrb, scriptArray);
 
 	std::string decodeBuffer;
 	decodeBuffer.resize(0x1000);
 
 	for (int i = 0; i < scriptCount; ++i)
 	{
+#ifdef __EMSCRIPTEN
+		emscripten_sleep(10);
+#endif
 		mrb_value script = mrb_ary_entry(scriptArray, i);
 
 		mrb_value scriptChksum = mrb_ary_entry(script, 0);
