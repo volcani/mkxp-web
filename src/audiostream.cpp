@@ -28,6 +28,10 @@
 #include <SDL_thread.h>
 #include <SDL_timer.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 AudioStream::AudioStream(ALStream::LoopMode loopMode,
                          const std::string &threadId)
 	: extPaused(false),
@@ -323,7 +327,11 @@ void AudioStream::fadeOutThread()
 
 		unlockStream();
 
+#ifdef __EMSCRIPTEN__
+		emscripten_sleep(AUDIO_SLEEP);
+#else
 		SDL_Delay(AUDIO_SLEEP);
+#endif
 	}
 
 	fade.active.clear();
@@ -360,6 +368,10 @@ void AudioStream::fadeInThread()
 
 		unlockStream();
 
+#ifdef __EMSCRIPTEN__
+		emscripten_sleep(AUDIO_SLEEP);
+#else
 		SDL_Delay(AUDIO_SLEEP);
+#endif
 	}
 }

@@ -43,7 +43,7 @@ struct Config
 	int defScreenH = 0;
 
 	int fixedFramerate = 0;
-	bool frameSkip =true;
+	bool frameSkip =false;
 	bool syncToRefreshrate = false;
 
 	bool solidFonts = false;

@@ -447,7 +447,6 @@ private:
 #endif
 #endif
 #ifdef __EMSCRIPTEN__
-printf("EMSCRIPTEN SLEEP IN GRAPHICS\n");
 		emscripten_sleep(ticks /tickFreqMS);
 #endif
 	}

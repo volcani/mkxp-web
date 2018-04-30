@@ -35,6 +35,10 @@
 #include <SDL_thread.h>
 #include <SDL_timer.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 ALStream::ALStream(LoopMode loopMode,
 		           const std::string &threadId)
 	: looped(loopMode == Looped),
@@ -474,6 +478,11 @@ void ALStream::streamData()
 		if (threadTermReq)
 			break;
 
+#ifdef __EMSCRIPTEN__
+		emscripten_sleep(AUDIO_SLEEP);
+#else
 		SDL_Delay(AUDIO_SLEEP);
+#endif
+
 	}
 }
