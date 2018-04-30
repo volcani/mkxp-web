@@ -49,10 +49,6 @@
 #include "binding-types.h"
 #include "mrb-ext/marshal.h"
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
-
 static void mrbBindingExecute();
 static void mrbBindingTerminate();
 static void mrbBindingReset();
@@ -118,16 +114,7 @@ static void mrbBindingInit(mrb_state *mrb)
 	/* Load RPG module */
 	mrb_load_irep(mrb, mrbModuleRPG);
 
-	/* Load global constants */
 	mrb_define_global_const(mrb, "MKXP", mrb_true_value());
-
-//	mrb_value debug = mrb_bool_value(shState->config().editor.debug);
-//	if (rgssVer == 1)
-		//mrb_define_global_const(mrb, "DEBUG", debug);
-//	else if (rgssVer >= 2)
-		//mrb_define_global_const(mrb, "TEST", debug);
-
-	//mrb_define_global_const(mrb, "BTEST", mrb_bool_value(shState->config().editor.battleTest));
 
 	mrb_gc_arena_restore(mrb, arena);
 }
@@ -177,8 +164,7 @@ showExcMessageBox(mrb_state *mrb, mrb_value exc)
 	snprintf(msgBoxText, sizeof(msgBoxText), "Script '%s' line %d: %s occured.\n\n%s",
 	         mrbValueString(file), mrb_fixnum(line), excClass, mrbValueString(mesg));
 
-printf("Show msg %s\n", msgBoxText); 
-//	shState->eThread().showMessageBox(msgBoxText, SDL_MESSAGEBOX_ERROR);
+	shState->eThread().showMessageBox(msgBoxText, SDL_MESSAGEBOX_ERROR);
 }
 
 static void
@@ -262,7 +248,6 @@ runMrbFile(mrb_state *mrb, const char *filename)
 static void
 runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 {
-printf("Inside runrmxpscriptes\n");
 	const std::string &scriptPack = shState->rtData().config.game.scripts;
 
 	if (scriptPack.empty())
@@ -276,7 +261,7 @@ printf("Inside runrmxpscriptes\n");
 		showError(std::string("Unable to open '") + scriptPack + "'");
 		return;
 	}
-printf("afterrxdataread\n");
+
 	/* We use a secondary util state to unmarshal the scripts */
 	mrb_state *scriptMrb = mrb_open();
 	SDL_RWops ops;
@@ -304,17 +289,13 @@ printf("afterrxdataread\n");
 		return;
 	}
 
-	int scriptCount = RARRAY_LEN(scriptArray);
+	int scriptCount = mrb_ary_len(scriptMrb, scriptArray);
 
 	std::string decodeBuffer;
 	decodeBuffer.resize(0x1000);
 
 	for (int i = 0; i < scriptCount; ++i)
 	{
-#ifdef __EMSCRIPTEN
-		printf("EMS SLEEP IN runRMXPScripts\n");
-		emscripten_sleep(10);
-#endif
 		mrb_value script = mrb_ary_entry(scriptArray, i);
 
 		mrb_value scriptChksum = mrb_ary_entry(script, 0);
@@ -376,7 +357,6 @@ printf("afterrxdataread\n");
 
 static void mrbBindingExecute()
 {
-printf("STARTBINDING EXECUTE\n");
 	mrb_state *mrb = mrb_open();
 
 	shState->setBindingData(mrb);
@@ -391,12 +371,12 @@ printf("STARTBINDING EXECUTE\n");
 
 	mrbc_context *ctx = mrbc_context_new(mrb);
 	ctx->capture_errors = 1;
-printf("CONFIG\n");
+
 	const Config &conf = shState->rtData().config;
 	const std::string &customScript = conf.customScript;
 //	const std::string &mrbFile = conf.mrbFile;
 	(void) runMrbFile; // FIXME mrbFile support on ice for now
-printf("before runrmxpscripts\n");
+
 	if (!customScript.empty())
 		runCustomScript(mrb, ctx, customScript.c_str());
 //	else if (!mrbFile.empty())

@@ -46,6 +46,11 @@
 
 #include "icon.png.xxd"
 
+ 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 static void
 rgssThreadError(RGSSThreadData *rtData, const std::string &msg)
 {
@@ -141,10 +146,10 @@ int rgssThreadFun(void *userdata)
 
 		return 0;
 	}
-
+printf("BEFORE SCRIPT EXECUTE\n");
 	/* Start script execution */
 	scriptBinding->execute();
-
+printf("AFTER SCRIPT\n");
 	threadData->rqTermAck.set();
 	threadData->ethread->requestTerminate();
 
@@ -335,6 +340,11 @@ int main(int argc, char *argv[])
 	/* Wait for RGSS thread response */
 	for (int i = 0; i < 1000; ++i)
 	{
+#ifdef __EMSCRIPTEN
+		printf("EMSCRIPTEN_SLEEP in main.cpp\n");
+		emscripten_sleep(10);
+#endif	
+
 		/* We can stop waiting when the request was ack'd */
 		if (rtData.rqTermAck)
 		{
