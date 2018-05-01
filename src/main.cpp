@@ -343,10 +343,6 @@ int main(int argc, char *argv[])
 	/* Wait for RGSS thread response */
 	for (int i = 0; i < 1000; ++i)
 	{
-#ifdef __EMSCRIPTEN
-		emscripten_sleep(10);
-#endif
-
 		/* We can stop waiting when the request was ack'd */
 		if (rtData.rqTermAck)
 		{
