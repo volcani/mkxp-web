@@ -163,6 +163,7 @@ void Config::read(int argc, char *argv[])
 	PO_DESC(vsync, bool, false) \
 	PO_DESC(defScreenW, int, 0) \
 	PO_DESC(defScreenH, int, 0) \
+	PO_DESC(windowTitle, std::string, "") \
 	PO_DESC(fixedFramerate, int, 0) \
 	PO_DESC(frameSkip, bool, true) \
 	PO_DESC(syncToRefreshrate, bool, false) \
@@ -189,6 +190,27 @@ void Config::read(int argc, char *argv[])
 
 // Not gonna take your shit boost
 #define GUARD_ALL( exp ) try { exp } catch(...) {}
+
+	editor.debug = false;
+	editor.battleTest = false;
+
+	/* Read arguments sent from the editor */
+	if (argc > 1)
+	{
+		std::string argv1 = argv[1];
+		/* RGSS1 uses "debug", 2 and 3 use "test" */
+		if (argv1 == "debug" || argv1 == "test")
+			editor.debug = true;
+		else if (argv1 == "btest")
+			editor.battleTest = true;
+
+		/* Fix offset */
+		if (editor.debug || editor.battleTest)
+		{
+			argc--;
+			argv++;
+		}
+	}
 
 #define PO_DESC(key, type, def) (#key, po::value< type >()->default_value(def))
 

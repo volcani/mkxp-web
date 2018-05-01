@@ -41,6 +41,7 @@ struct Config
 
 	int defScreenW = 0;
 	int defScreenH = 0;
+	std::string windowTitle;
 
 	int fixedFramerate = 0;
 	bool frameSkip =false;
@@ -86,6 +87,12 @@ struct Config
 	std::vector<std::string> fontSubs;
 
 	std::vector<std::string> rubyLoadpaths;
+
+	/* Editor flags */
+	struct {
+		bool debug;
+		bool battleTest;
+	} editor;
 
 	/* Game INI contents */
 	struct {
