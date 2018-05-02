@@ -277,8 +277,8 @@ RB_METHOD(mriRgssMain)
 	{
 		VALUE exc = Qnil;
 
-		rb_rescue2((VALUE(*)(ANYARGS)) rgssMainCb, rb_block_proc(),
-		           (VALUE(*)(ANYARGS)) rgssMainRescue, (VALUE) &exc,
+		rb_rescue2((VALUE(*)(VALUE *)) rgssMainCb, rb_block_proc(),
+		           (VALUE(*)(VALUE, VALUE)) rgssMainRescue, (VALUE) &exc,
 		           rb_eException, (VALUE) 0);
 
 		if (NIL_P(exc))
@@ -385,7 +385,7 @@ struct BacktraceData
 
 #define SCRIPT_SECTION_FMT (rgssVer >= 3 ? "{%04ld}" : "Section%03ld")
 
-static void runRMXPScripts(BacktraceData &btData)
+static void __attribute__ ((optnone)) runRMXPScripts(BacktraceData &btData)
 {
 	const Config &conf = shState->rtData().config;
 	const std::string &scriptPack = conf.game.scripts;
@@ -487,10 +487,6 @@ static void runRMXPScripts(BacktraceData &btData)
 
 	while (true)
 	{
-#ifdef __EMSCRIPTEN
-		emscripten_sleep(10);
-#endif	
-
 		for (long i = 0; i < scriptCount; ++i)
 		{
 			VALUE script = rb_ary_entry(scriptArray, i);
