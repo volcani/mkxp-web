@@ -294,7 +294,6 @@ void EventThread::process(RGSSThreadData &rtData)
 				rtData.rqReset.set();
 				break;
 			}
-
 			keyStates[event.key.keysym.scancode] = true;
 			break;
 

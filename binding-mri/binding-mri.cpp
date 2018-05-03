@@ -31,6 +31,12 @@
 #include "audio.h"
 #include "boost-hash.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
+#include <SDL_timer.h>
+
 #include <ruby.h>
 #ifndef RUBY_LEGACY_VERSION
 #include <ruby/encoding.h>
@@ -277,8 +283,8 @@ RB_METHOD(mriRgssMain)
 	{
 		VALUE exc = Qnil;
 
-		rb_rescue2((VALUE(*)(VALUE *)) rgssMainCb, rb_block_proc(),
-		           (VALUE(*)(VALUE, VALUE)) rgssMainRescue, (VALUE) &exc,
+		rb_rescue2((VALUE(*)(ANYARGS)) rgssMainCb, rb_block_proc(),
+		           (VALUE(*)(ANYARGS)) rgssMainRescue, (VALUE) &exc,
 		           rb_eException, (VALUE) 0);
 
 		if (NIL_P(exc))
@@ -352,9 +358,6 @@ static VALUE evalHelper(evalArg *arg)
 	return rb_funcall2(Qnil, rb_intern("eval"), ARRAY_SIZE(argv), argv);
 }
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
 static VALUE evalString(VALUE string, VALUE filename, int *state)
 {
 	evalArg arg = { string, filename };
@@ -384,6 +387,12 @@ struct BacktraceData
 };
 
 #define SCRIPT_SECTION_FMT (rgssVer >= 3 ? "{%04ld}" : "Section%03ld")
+
+void main_update_loop() {
+	int state;
+	VALUE result;
+	result = rb_eval_string_protect("main_update_loop", &state);
+}
 
 static void __attribute__ ((optnone)) runRMXPScripts(BacktraceData &btData)
 {
@@ -485,7 +494,8 @@ static void __attribute__ ((optnone)) runRMXPScripts(BacktraceData &btData)
 	if (exc != Qnil)
 		return;
 
-	while (true)
+
+	/* Execute scripts */
 	{
 		for (long i = 0; i < scriptCount; ++i)
 		{
@@ -513,6 +523,17 @@ static void __attribute__ ((optnone)) runRMXPScripts(BacktraceData &btData)
 				break;
 		}
 
+#ifdef __EMSCRIPTEN__
+		/* Use loop for emscripten */
+		emscripten_set_main_loop(main_update_loop,0, 0);
+#else
+		while(true) {
+			int state;
+			VALUE result;
+			result = rb_eval_string_protect("main_update_loop", &state);
+			if (state) break;
+		}
+
 		printf("tick\n");
 		shState->eThread().process(shState->rtData());
 
@@ -521,6 +542,7 @@ static void __attribute__ ((optnone)) runRMXPScripts(BacktraceData &btData)
 			break;
 
 		processReset();
+#endif
 	}
 }
 
@@ -628,6 +650,7 @@ static void mriBindingExecute()
 	else
 		runRMXPScripts(btData);
 
+#ifndef __EMSCRIPTEN__
 	VALUE exc = rb_errinfo();
 	if (!NIL_P(exc) && !rb_obj_is_kind_of(exc, rb_eSystemExit))
 		showExc(exc, btData);
@@ -635,6 +658,7 @@ static void mriBindingExecute()
 	ruby_cleanup(0);
 
 	shState->rtData().rqTermAck.set();
+#endif
 }
 
 static void mriBindingTerminate()

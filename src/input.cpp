@@ -358,6 +358,17 @@ struct InputPrivate
 
 	void checkBindingChange(const RGSSThreadData &rtData)
 	{
+
+#ifdef __EMSCRIPTEN__
+		/* Run only once for emscripten. This is necessary due to *
+ 		 * a bug (in mutable?) that keeps reinitializing bindings */
+		static bool once = false;
+		if (!once)
+			once = true;
+		else
+			return;
+#endif
+
 		BDescVec d;
 
 		if (!rtData.bindingUpdateMsg.poll(d))

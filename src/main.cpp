@@ -150,13 +150,16 @@ int rgssThreadFun(void *userdata)
 	/* Start script execution */
 	scriptBinding->execute();
 
+#ifndef __EMSCRIPTEN__
 	threadData->rqTermAck.set();
+
 	threadData->ethread->requestTerminate();
 
 	SharedState::finiInstance();
 
 	alcDestroyContext(alcCtx);
 	SDL_GL_DeleteContext(glCtx);
+#endif
 
 	return 0;
 }
@@ -344,6 +347,10 @@ int main(int argc, char *argv[])
 
 	/* Start event processing */
 	eventThread.process(rtData);
+
+#ifdef __EMSCRIPTEN__
+	return 0;
+#endif
 
 	/* Request RGSS thread to stop */
 	rtData.rqTerm.set();
