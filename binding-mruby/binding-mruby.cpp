@@ -258,6 +258,19 @@ runMrbFile(mrb_state *mrb, const char *filename)
 	fclose(f);
 }
 
+static mrb_state * static_mrb;
+static mrb_state * static_scriptmrb;
+
+void __attribute__ ((optnone)) main_update_loop() {
+	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
+	if (static_mrb->exc) {
+		printf("Execution Errored\n");
+		mrb_close(static_scriptmrb);
+		shState->texPool().disable();
+		mrb_close(static_mrb);
+	}
+}
+
 static void
 runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 {
@@ -309,9 +322,6 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 
 	for (int i = 0; i < scriptCount; ++i)
 	{
-#ifdef __EMSCRIPTEN
-		emscripten_sleep(10);
-#endif
 		mrb_value script = mrb_ary_entry(scriptArray, i);
 
 		mrb_value scriptChksum = mrb_ary_entry(script, 0);
@@ -368,7 +378,23 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 			break;
 	}
 
+	static_mrb = mrb;
+	static_scriptmrb = scriptMrb;
+
+#ifdef __EMSCRIPTEN__
+	/* Use loop for emscripten */
+	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
+	emscripten_set_main_loop(main_update_loop, 0, 1);
+	return;
+#else
+	while (true) {
+		main_update_loop();
+		SDL_Delay(20);
+		if (static_mrb->exc)
+			break;
+	}
 	mrb_close(scriptMrb);
+#endif
 }
 
 static void mrbBindingExecute()
@@ -400,6 +426,7 @@ static void mrbBindingExecute()
 	else
 		runRMXPScripts(mrb, ctx);
 
+#ifndef __EMSCRIPTEN__
 	checkException(mrb);
 
 	shState->rtData().rqTermAck.set();
@@ -407,6 +434,7 @@ static void mrbBindingExecute()
 
 	mrbc_context_free(mrb, ctx);
 	mrb_close(mrb);
+#endif
 }
 
 static void mrbBindingTerminate()
