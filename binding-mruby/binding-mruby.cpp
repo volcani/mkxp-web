@@ -48,6 +48,7 @@
 #include "binding-util.h"
 #include "binding-types.h"
 #include "mrb-ext/marshal.h"
+#include "mrb-ext/file-helper.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -69,7 +70,6 @@ ScriptBinding *scriptBinding = &scriptBindingImpl;
 
 void fileBindingInit(mrb_state *);
 void timeBindingInit(mrb_state *);
-void marshalBindingInit(mrb_state *);
 void kernelBindingInit(mrb_state *);
 
 void tableBindingInit(mrb_state *);
@@ -96,7 +96,6 @@ static void mrbBindingInit(mrb_state *mrb)
 	/* Init standard classes */
 	fileBindingInit(mrb);
 	timeBindingInit(mrb);
-	marshalBindingInit(mrb);
 	kernelBindingInit(mrb);
 
 	/* Init RGSS classes */
@@ -263,12 +262,14 @@ static mrb_state * static_scriptmrb;
 
 void __attribute__ ((optnone)) main_update_loop() {
 	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
+#ifdef __EMSCRIPTEN__
 	if (static_mrb->exc) {
 		printf("Execution Errored\n");
 		mrb_close(static_scriptmrb);
 		shState->texPool().disable();
 		mrb_close(static_mrb);
 	}
+#endif
 }
 
 static void
@@ -290,23 +291,22 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 
 	/* We use a secondary util state to unmarshal the scripts */
 	mrb_state *scriptMrb = mrb_open();
-	SDL_RWops ops;
-
-	shState->fileSystem().openReadRaw(ops, scriptPack.c_str());
 
 	mrb_value scriptArray = mrb_nil_value();
 	std::string readError;
 
 	try
 	{
-		scriptArray = marshalLoadInt(scriptMrb, &ops);
+		SDL_rw_file_helper fileHelper;
+		fileHelper.filename = scriptPack.c_str();
+		char * contents = fileHelper.read();
+		mrb_value rawdata = mrb_str_new_static(mrb, contents, fileHelper.length);
+		scriptArray = mrb_marshal_load(mrb, rawdata);
 	}
 	catch (const Exception &e)
 	{
 		readError = std::string(": ") + e.msg;
 	}
-
-	SDL_RWclose(&ops);
 
 	if (!mrb_array_p(scriptArray))
 	{
@@ -389,7 +389,7 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 #else
 	while (true) {
 		main_update_loop();
-		SDL_Delay(20);
+		SDL_Delay(3);
 		if (static_mrb->exc)
 			break;
 	}
