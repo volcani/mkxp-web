@@ -25,6 +25,8 @@
 #include "exception.h"
 
 #include <SDL_video.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <string>
 
 GLFunctions gl;
@@ -69,7 +71,7 @@ static void parseExtensionsCompat(_PFNGLGETSTRINGPROC GetString, BoostSet<std::s
 }
 
 #define GL_FUN(name, type) \
-	gl.name = (type) SDL_GL_GetProcAddress("gl" #name EXT_SUFFIX);
+	gl.name = (type) gl##name;
 
 #define EXC(msg) \
 	Exception(Exception::MKXPError, "%s", msg)
@@ -108,15 +110,15 @@ void initGLFunctions()
 
 	BoostSet<std::string> ext;
 
-	if (glMajor >= 3)
-		parseExtensionsCore(gl.GetIntegerv, ext);
-	else
+//	if (glMajor >= 3)
+//		parseExtensionsCore(gl.GetIntegerv, ext);
+	//else
 		parseExtensionsCompat(gl.GetString, ext);
 
 #define HAVE_EXT(_ext) ext.contains("GL_" #_ext)
 
 	/* FBO entrypoints */
-	if (glMajor >= 3 || HAVE_EXT(ARB_framebuffer_object))
+	/*if (glMajor >= 3 || HAVE_EXT(ARB_framebuffer_object))
 	{
 #undef EXT_SUFFIX
 #define EXT_SUFFIX ""
@@ -124,9 +126,9 @@ void initGLFunctions()
 		GL_FBO_BLIT_FUN;
 	}
 	else if (gles && glMajor == 2)
-	{
+	{*/
 		GL_FBO_FUN;
-	}
+	/*}
 	else if (HAVE_EXT(EXT_framebuffer_object))
 	{
 #undef EXT_SUFFIX
@@ -141,10 +143,10 @@ void initGLFunctions()
 	else
 	{
 		throw EXC("No FBO support available");
-	}
+	}*/
 
 	/* VAO entrypoints */
-	if (HAVE_EXT(ARB_vertex_array_object) || glMajor >= 3)
+	/*if (HAVE_EXT(ARB_vertex_array_object) || glMajor >= 3)
 	{
 #undef EXT_SUFFIX
 #define EXT_SUFFIX ""
@@ -161,10 +163,10 @@ void initGLFunctions()
 #undef EXT_SUFFIX
 #define EXT_SUFFIX "OES"
 		GL_VAO_FUN;
-	}
+	}*/
 
 	/* Debug callback entrypoints */
-	if (HAVE_EXT(KHR_debug))
+	/*if (HAVE_EXT(KHR_debug))
 	{
 #undef EXT_SUFFIX
 #define EXT_SUFFIX ""
@@ -182,7 +184,7 @@ void initGLFunctions()
 #undef EXT_SUFFIX
 #define EXT_SUFFIX "GREMEDY"
 		GL_GREMEMDY_FUN;
-	}
+	}*/
 
 	/* Misc caps */
 	if (!gles || glMajor >= 3 || HAVE_EXT(EXT_unpack_subimage))

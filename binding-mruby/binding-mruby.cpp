@@ -265,6 +265,11 @@ void __attribute__ ((optnone)) main_update_loop() {
 #ifdef __EMSCRIPTEN__
 	if (static_mrb->exc) {
 		printf("Execution Errored\n");
+		mrb_value s = mrb_funcall(static_mrb, mrb_obj_value(static_mrb->exc), "inspect", 0);
+		if (mrb_string_p(s)) {
+			printf("%s", mrb_str_to_cstr(static_mrb, s));
+			printf("\n");
+		}
 		mrb_close(static_scriptmrb);
 		shState->texPool().disable();
 		mrb_close(static_mrb);

@@ -23,6 +23,7 @@
 #include "binding-util.h"
 #include "binding-types.h"
 #include "serializable-binding.h"
+#include <iostream>
 
 #define ATTR_RW(Type, Attr, arg_type, mrb_val, arg_t_s) \
 	MRB_METHOD(Type##Get##Attr) \

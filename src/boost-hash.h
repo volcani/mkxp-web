@@ -22,8 +22,8 @@
 #ifndef BOOSTHASH_H
 #define BOOSTHASH_H
 
-#include <boost/unordered/unordered_map.hpp>
-#include <boost/unordered/unordered_set.hpp>
+#include <map>
+#include <set>
 
 #include <utility>
 
@@ -34,7 +34,7 @@ template<typename K, typename V>
 class BoostHash
 {
 private:
-	typedef boost::unordered_map<K, V> BoostType;
+	typedef std::map<K, V> BoostType;
 	typedef std::pair<K, V> PairType;
 	BoostType p;
 
@@ -98,7 +98,7 @@ template<typename K>
 class BoostSet
 {
 private:
-	typedef boost::unordered_set<K> BoostType;
+	typedef std::set<K> BoostType;
 	BoostType p;
 
 public:

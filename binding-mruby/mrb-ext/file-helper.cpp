@@ -38,4 +38,5 @@ bool SDL_rw_file_helper::write(char * data) {
         }
         SDL_RWclose(rw);
         }
+	return false;
 }

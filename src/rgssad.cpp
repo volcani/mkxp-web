@@ -23,7 +23,7 @@
 #include "boost-hash.h"
 
 #include <stdint.h>
-#include <string.h>
+#include <string>
 
 struct RGSS_entryData
 {
@@ -281,8 +281,9 @@ static const PHYSFS_Io RGSS_IoTemplate =
 
 static void
 processDirectories(RGSS_archiveData *data, BoostSet<std::string> &topLevel,
-                   char *nameBuf, uint32_t nameLen)
+                   char *nameBufc, uint32_t nameLen)
 {
+	std::string nameBuf(nameBufc);
 	/* Check for top level entries */
 	for (uint32_t i = 0; i < nameLen; ++i)
 	{
@@ -307,7 +308,7 @@ processDirectories(RGSS_archiveData *data, BoostSet<std::string> &topLevel,
 		{
 			nameBuf[i] = '\0';
 
-			const char *dir = nameBuf;
+			const char *dir = nameBuf.c_str();
 			const char *entry = &nameBuf[i+1];
 
 			BoostSet<std::string> &entryList = data->dirHash[dir];
