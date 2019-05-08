@@ -82,6 +82,9 @@ void AudioStream::play(const std::string &filename,
                        int pitch,
                        float offset)
 {
+#ifdef __EMSCRIPTEN__
+	return;
+#endif
 	finiFadeOutInt();
 
 	lockStream();

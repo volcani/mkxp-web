@@ -30,6 +30,13 @@
 
 #include <SDL_sound.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/fetch.h>
+#include <string>
+#include <fstream>
+#endif
+
 #define SE_CACHE_MEM (10*1024*1024) // 10 MB
 
 struct SoundBuffer
@@ -119,14 +126,21 @@ SoundEmitter::~SoundEmitter()
 		SoundBuffer::deref(iter->second);
 }
 
-void SoundEmitter::play(const std::string &filename,
+struct PlayInternalCallbackData {
+	SoundEmitter * se;
+	int volume;
+	int pitch;
+};
+
+void SoundEmitter::play_internal(const std::string &filename,
                         int volume,
-                        int pitch)
+                        int pitch,
+			emscripten_fetch_t * fetch)
 {
 	float _volume = clamp<int>(volume, 0, 100) / 100.0f;
 	float _pitch  = clamp<int>(pitch, 50, 150) / 100.0f;
 
-	SoundBuffer *buffer = allocateBuffer(filename);
+	SoundBuffer *buffer = allocateBuffer(filename, fetch);
 
 	if (!buffer)
 		return;
@@ -178,6 +192,57 @@ void SoundEmitter::play(const std::string &filename,
 	AL::Source::play(src);
 }
 
+void saveAudioFile(void * arg) {
+	emscripten_fetch_t * fetch = (emscripten_fetch_t *) arg;
+		/*std::string fname(fetch->url);
+		for (size_t i = 0; i < fname.size(); i++) {
+			if (fname[i] == '/') fname[i] = '_';
+		}
+		fname = fname + ".ogg";*/
+	try {
+		PlayInternalCallbackData * data = ((PlayInternalCallbackData *) fetch->userData);
+		data->se->play_internal(fetch->url, data->volume, data->pitch, fetch);
+	} catch (const Exception &e) {}
+	delete ((PlayInternalCallbackData *) fetch->userData);
+	emscripten_fetch_close(fetch);
+}
+
+void audioDownloadSucceeded(emscripten_fetch_t *fetch) {
+	emscripten_push_main_loop_blocker(saveAudioFile, (void *) fetch);
+}
+
+void audioDownloadFailed(emscripten_fetch_t *fetch) {
+	printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+	delete ((PlayInternalCallbackData *) fetch->userData);
+	emscripten_fetch_close(fetch);
+}
+
+void addAudioDownload(const char * filename, PlayInternalCallbackData * se) {
+	const char *pfx = "async/";
+	char result[512];
+	strcpy(result, pfx);
+	strcat(result, filename);
+
+	emscripten_fetch_attr_t attr;
+	emscripten_fetch_attr_init(&attr);
+	strcpy(attr.requestMethod, "GET");
+	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+	attr.onsuccess = audioDownloadSucceeded;
+	attr.onerror = audioDownloadFailed;
+	attr.userData = se;
+	emscripten_fetch(&attr, result);
+}
+
+void SoundEmitter::play(const std::string &filename,
+                        int volume,
+                        int pitch) {
+	PlayInternalCallbackData * data = new PlayInternalCallbackData();
+	data->se = this;
+	data->volume = volume;
+	data->pitch = pitch;
+	addAudioDownload(filename.c_str(), data);
+}
+
 void SoundEmitter::stop()
 {
 	for (size_t i = 0; i < srcCount; i++)
@@ -192,16 +257,7 @@ struct SoundOpenHandler : FileSystem::OpenHandler
 	    : buffer(0)
 	{}
 
-	bool tryRead(SDL_RWops &ops, const char *ext)
-	{
-		Sound_Sample *sample = Sound_NewSample(&ops, ext, 0, STREAM_BUF_SIZE);
-
-		if (!sample)
-		{
-			SDL_RWclose(&ops);
-			return false;
-		}
-
+	void decode(Sound_Sample *sample) {
 		/* Do all of the decoding in the handler so we don't have
 		 * to keep the source ops around */
 		uint32_t decBytes = Sound_DecodeAll(sample);
@@ -217,12 +273,38 @@ struct SoundOpenHandler : FileSystem::OpenHandler
 							   buffer->bytes, sample->actual.rate);
 
 		Sound_FreeSample(sample);
+	}
+
+	bool tryRead(SDL_RWops &ops, const char *ext)
+	{
+		Sound_Sample *sample = Sound_NewSample(&ops, ext, 0, STREAM_BUF_SIZE);
+
+		if (!sample)
+		{
+			SDL_RWclose(&ops);
+			return false;
+		}
+
+		decode(sample);
+
+		return true;
+	}
+
+	bool emread(emscripten_fetch_t *fetch) {
+		Sound_Sample *sample = Sound_NewSample(SDL_RWFromConstMem(fetch->data, fetch->numBytes), "ogg", 0, STREAM_BUF_SIZE);
+
+		if (!sample)
+		{
+			return false;
+		}
+
+		decode(sample);
 
 		return true;
 	}
 };
 
-SoundBuffer *SoundEmitter::allocateBuffer(const std::string &filename)
+SoundBuffer *SoundEmitter::allocateBuffer(const std::string &filename, emscripten_fetch_t *fetch)
 {
 	SoundBuffer *buffer = bufferHash.value(filename, 0);
 
@@ -239,7 +321,7 @@ SoundBuffer *SoundEmitter::allocateBuffer(const std::string &filename)
 	{
 		/* Buffer not in cache, needs to be loaded */
 		SoundOpenHandler handler;
-		shState->fileSystem().openRead(handler, filename.c_str());
+		handler.emread(fetch);
 		buffer = handler.buffer;
 
 		if (!buffer)

@@ -29,6 +29,10 @@
 #include <string>
 #include <vector>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/fetch.h>
+#endif
+
 struct SoundBuffer;
 struct Config;
 
@@ -55,11 +59,14 @@ struct SoundEmitter
 	void play(const std::string &filename,
 	          int volume,
 	          int pitch);
+	void play_internal(const std::string &filename,
+	          int volume,
+	          int pitch, emscripten_fetch_t *fetch);
 
 	void stop();
 
 private:
-	SoundBuffer *allocateBuffer(const std::string &filename);
+	SoundBuffer *allocateBuffer(const std::string &filename, emscripten_fetch_t *fetch);
 };
 
 #endif // SOUNDEMITTER_H
