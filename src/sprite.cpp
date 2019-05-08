@@ -331,6 +331,10 @@ DEF_ATTR_SIMPLE(Sprite, SrcRect,     Rect&,  *p->srcRect)
 DEF_ATTR_SIMPLE(Sprite, Color,       Color&, *p->color)
 DEF_ATTR_SIMPLE(Sprite, Tone,        Tone&,  *p->tone)
 
+void updateSprite(void * sprite) {
+	((Sprite *) sprite)->update();
+}
+
 void Sprite::setBitmap(Bitmap *bitmap)
 {
 	guardDisposed();
@@ -350,6 +354,9 @@ void Sprite::setBitmap(Bitmap *bitmap)
 	p->quad.setPosRect(p->srcRect->toFloatRect());
 
 	p->wave.dirty = true;
+
+	//bitmap->reloadCallback = updateSprite;
+	//bitmap->reloadCallbackData = (void *) this;
 }
 
 void Sprite::setX(int value)

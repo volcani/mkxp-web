@@ -51,6 +51,9 @@
 #include <emscripten.h>
 #endif
 
+static RGSSThreadData * staticUserData;
+static EventThread * eventThread;
+
 static void
 rgssThreadError(RGSSThreadData *rtData, const std::string &msg)
 {
@@ -326,32 +329,35 @@ int main(int argc, char *argv[])
 	SDL_GetDisplayMode(0, 0, &mode);
 
 	/* Can't sync to display refresh rate if its value is unknown */
+#ifndef __EMSCRIPTEN__
 	if (!mode.refresh_rate)
+#endif
 		conf.syncToRefreshrate = false;
 
-	EventThread eventThread;
-	RGSSThreadData rtData(&eventThread, argv[0], win,
+	eventThread = new EventThread();
+	staticUserData = new RGSSThreadData(eventThread, argv[0], win,
 	                      alcDev, mode.refresh_rate, conf);
 
 	int winW, winH;
 	SDL_GetWindowSize(win, &winW, &winH);
-	rtData.windowSizeMsg.post(Vec2i(winW, winH));
+	staticUserData->windowSizeMsg.post(Vec2i(winW, winH));
 
 	/* Load and post key bindings */
-	rtData.bindingUpdateMsg.post(loadBindings(conf));
+	staticUserData->bindingUpdateMsg.post(loadBindings(conf));
 
 	/* Start RGSS thread */
 	//SDL_Thread *rgssThread =
 	//        SDL_CreateThread(rgssThreadFun, "rgss", &rtData);
-	::rgssThreadFun(&rtData);
+	::rgssThreadFun(staticUserData);
 
 	/* Start event processing */
-	eventThread.process(rtData);
+	// eventThread.process(rtData);
 
 #ifdef __EMSCRIPTEN__
+	printf("Exiting main function\n");
 	return 0;
 #endif
-
+#ifndef __EMSCRIPTEN__
 	/* Request RGSS thread to stop */
 	rtData.rqTerm.set();
 
@@ -398,4 +404,5 @@ int main(int argc, char *argv[])
 	SDL_Quit();
 
 	return 0;
+#endif
 }

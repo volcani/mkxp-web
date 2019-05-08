@@ -181,7 +181,7 @@ INITCOPY_FUN(Rect)
 	mrb_define_method(mrb, klass, "inspect", Klass##Stringify, MRB_ARGS_NONE()); \
 }
 
-void etcBindingInit(mrb_state *mrb)
+void __attribute__ ((optnone)) etcBindingInit(mrb_state *mrb)
 {
 	RClass *klass;
 

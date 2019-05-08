@@ -52,6 +52,8 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <emscripten/fetch.h>
+#include <fstream>
 #endif
 
 static void mrbBindingExecute();
@@ -87,9 +89,9 @@ void audioBindingInit(mrb_state *);
 void graphicsBindingInit(mrb_state *);
 
 /* From module_rpg.c */
-extern const uint8_t mrbModuleRPG[];
+extern const uint8_t rpg_mrb[];
 
-static void mrbBindingInit(mrb_state *mrb)
+static void __attribute__ ((optnone)) mrbBindingInit(mrb_state *mrb)
 {
 	int arena = mrb_gc_arena_save(mrb);
 
@@ -115,7 +117,7 @@ static void mrbBindingInit(mrb_state *mrb)
 	graphicsBindingInit(mrb);
 
 	/* Load RPG module */
-	mrb_load_irep(mrb, mrbModuleRPG);
+	mrb_load_irep(mrb, rpg_mrb);
 
 	/* Load global constants */
 	mrb_define_global_const(mrb, "MKXP", mrb_true_value());
@@ -257,25 +259,31 @@ runMrbFile(mrb_state *mrb, const char *filename)
 	fclose(f);
 }
 
-static mrb_state * static_mrb;
+static MrbData * mrbData;
 static mrb_state * static_scriptmrb;
 
-void __attribute__ ((optnone)) main_update_loop() {
-	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
+static void __attribute__ ((optnone)) main_update_loop() {
+	mrb_state * mrb = (mrb_state *) static_cast<mrb_state*>(shState->bindingData());
+	mrb_load_nstring_cxt(mrb, "main_update_loop", 16, NULL);
 #ifdef __EMSCRIPTEN__
-	if (static_mrb->exc) {
+	if (mrb->exc) {
 		printf("Execution Errored\n");
-		mrb_value s = mrb_funcall(static_mrb, mrb_obj_value(static_mrb->exc), "inspect", 0);
+		mrb_value s = mrb_funcall(mrb, mrb_obj_value(mrb->exc), "inspect", 0);
 		if (mrb_string_p(s)) {
-			printf("%s", mrb_str_to_cstr(static_mrb, s));
+			printf("%s", mrb_str_to_cstr(mrb, s));
 			printf("\n");
 		}
-		mrb_close(static_scriptmrb);
-		shState->texPool().disable();
-		mrb_close(static_mrb);
+		emscripten_cancel_main_loop();
+		//mrb_close(static_scriptmrb);
+		//shState->texPool().disable();
+		//mrb_close(static_mrb);
 	}
 #endif
 }
+
+static bool initialized = false;
+static emscripten_fetch_t *fetchScripts;
+static std::atomic<int> assetQ;
 
 static void
 runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
@@ -302,16 +310,16 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 
 	try
 	{
-		SDL_rw_file_helper fileHelper;
-		fileHelper.filename = scriptPack.c_str();
-		char * contents = fileHelper.read();
-		mrb_value rawdata = mrb_str_new_static(mrb, contents, fileHelper.length);
+		const char * contents = fetchScripts->data;
+		mrb_value rawdata = mrb_str_new_static(mrb, contents, fetchScripts->numBytes);
 		scriptArray = mrb_marshal_load(mrb, rawdata);
 	}
 	catch (const Exception &e)
 	{
 		readError = std::string(": ") + e.msg;
 	}
+	emscripten_fetch_close(fetchScripts);
+	fetchScripts = NULL;
 
 	if (!mrb_array_p(scriptArray))
 	{
@@ -383,51 +391,45 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 			break;
 	}
 
-	static_mrb = mrb;
 	static_scriptmrb = scriptMrb;
 
 #ifdef __EMSCRIPTEN__
-	/* Use loop for emscripten */
-	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
-	emscripten_set_main_loop(main_update_loop, 0, 1);
 	return;
 #else
 	while (true) {
 		main_update_loop();
 		SDL_Delay(3);
-		if (static_mrb->exc)
+		if (mrb->exc)
 			break;
 	}
 	mrb_close(scriptMrb);
 #endif
 }
 
-static void mrbBindingExecute()
+static void __attribute__ ((optnone)) mrbBindingMain()
 {
 	mrb_state *mrb = mrb_open();
 
 	shState->setBindingData(mrb);
 
-	MrbData mrbData(mrb);
-	mrb->ud = &mrbData;
+	mrbData = new MrbData(mrb);
+	mrb->ud = mrbData;
 
 	mrb_define_module_function(mrb, mrb->kernel_module, "time_op",
 	                           mkxpTimeOp, MRB_ARGS_OPT(2) | MRB_ARGS_BLOCK());
 
 	mrbBindingInit(mrb);
 
+	const Config &conf = shState->rtData().config;
+	const std::string &customScript = conf.customScript;
+	(void) runMrbFile; // FIXME mrbFile support on ice for now
+
 	mrbc_context *ctx = mrbc_context_new(mrb);
 	ctx->capture_errors = 1;
 
-	const Config &conf = shState->rtData().config;
-	const std::string &customScript = conf.customScript;
-//	const std::string &mrbFile = conf.mrbFile;
-	(void) runMrbFile; // FIXME mrbFile support on ice for now
-
-	if (!customScript.empty())
+	if (!customScript.empty()) {
 		runCustomScript(mrb, ctx, customScript.c_str());
-//	else if (!mrbFile.empty())
-//		runMrbFile(mrb, mrbFile.c_str());
+	}
 	else
 		runRMXPScripts(mrb, ctx);
 
@@ -440,6 +442,48 @@ static void mrbBindingExecute()
 	mrbc_context_free(mrb, ctx);
 	mrb_close(mrb);
 #endif
+}
+
+void downloadSucceeded(emscripten_fetch_t *fetch) {
+	printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+	fetchScripts = fetch;
+	assetQ--;
+}
+
+void downloadFailed(emscripten_fetch_t *fetch) {
+	printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+	fetchScripts = fetch;
+	assetQ--;
+	emscripten_fetch_close(fetch);
+}
+
+void __attribute__ ((optnone)) supermainloop() {
+	if (assetQ > 0) return;
+
+	if (initialized) {
+		main_update_loop();
+	} else {
+		mrbBindingMain();
+		initialized = true;
+	}
+}
+
+static void __attribute__ ((optnone)) mrbBindingExecute()
+{
+	assetQ = 1;
+	emscripten_fetch_attr_t attr;
+	emscripten_fetch_attr_init(&attr);
+	strcpy(attr.requestMethod, "GET");
+	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+	attr.onsuccess = downloadSucceeded;
+	attr.onerror = downloadFailed;
+	emscripten_fetch(&attr, "async/Data/Scripts.rxdata");
+	emscripten_set_main_loop(supermainloop, 0, 0);
+}
+
+
+void addAssetDownloadMap(char * path) {
+
 }
 
 static void mrbBindingTerminate()

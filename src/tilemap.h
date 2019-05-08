@@ -66,6 +66,8 @@ public:
 	DECL_ATTR( OX,         int       )
 	DECL_ATTR( OY,         int       )
 
+	void reloadBitmap();
+
 private:
 	TilemapPrivate *p;
 	Autotiles atProxy;

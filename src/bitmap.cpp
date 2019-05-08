@@ -44,6 +44,13 @@
 #include "font.h"
 #include "eventthread.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/fetch.h>
+#include <string>
+#include <fstream>
+#endif
+
 #define GUARD_MEGA \
 	{ \
 		if (p->megaSurface) \
@@ -52,6 +59,45 @@
 	}
 
 #define OUTLINE_SIZE 1
+
+void reloadBitmap(void * arg) {
+	emscripten_fetch_t * fetch = (emscripten_fetch_t *) arg;
+	try {
+		SDL_Surface * imgSurf = IMG_LoadTyped_RW(SDL_RWFromConstMem(fetch->data, fetch->numBytes), 1, "");
+		Bitmap * bitmap = ((Bitmap*)fetch->userData);
+		bitmap->fromSurf(imgSurf, fetch->url);
+
+		if (bitmap->reloadCallback)
+			bitmap->reloadCallback(bitmap->reloadCallbackData);
+	} catch (const Exception &e) {}
+	emscripten_fetch_close(fetch);
+}
+
+void assetDownloadSucceeded(emscripten_fetch_t *fetch) {
+	emscripten_push_main_loop_blocker(reloadBitmap, (void *) fetch);
+}
+
+void assetDownloadFailed(emscripten_fetch_t *fetch) {
+	printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+	emscripten_fetch_close(fetch);
+}
+
+void addBitmapDownload(const char * filename, Bitmap * bitmap) {
+	const char *pfx = "async/";
+	char result[512];
+	strcpy(result, pfx);
+	strcat(result, filename);
+
+	emscripten_fetch_attr_t attr;
+	emscripten_fetch_attr_init(&attr);
+	strcpy(attr.requestMethod, "GET");
+	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+	attr.onsuccess = assetDownloadSucceeded;
+	attr.onerror = assetDownloadFailed;
+	attr.userData = bitmap;
+	emscripten_fetch(&attr, result);
+}
+
 
 /* Normalize (= ensure width and
  * height are positive) */
@@ -86,7 +132,7 @@ struct BitmapPrivate
 	 * whose Bitmaps don't fit into a regular texture. They're
 	 * kept in RAM and will throw an error if they're used in
 	 * any context other than as Tilesets */
-	SDL_Surface *megaSurface;
+	SDL_Surface *megaSurface = NULL;
 
 	/* A cached version of the bitmap in client memory, for
 	 * getPixel calls. Is invalidated any time the bitmap
@@ -248,12 +294,7 @@ struct BitmapOpenHandler : FileSystem::OpenHandler
 	}
 };
 
-Bitmap::Bitmap(const char *filename)
-{
-	BitmapOpenHandler handler;
-	shState->fileSystem().openRead(handler, filename);
-	SDL_Surface *imgSurf = handler.surf;
-
+void Bitmap::fromSurf(SDL_Surface *imgSurf, const char * filename) {
 	if (!imgSurf)
 		throw Exception(Exception::SDLError, "Error loading image '%s': %s",
 		                filename, SDL_GetError());
@@ -263,27 +304,31 @@ Bitmap::Bitmap(const char *filename)
 	if (imgSurf->w > glState.caps.maxTexSize || imgSurf->h > glState.caps.maxTexSize)
 	{
 		/* Mega surface */
+		if (p) delete p;
 		p = new BitmapPrivate(this);
 		p->megaSurface = imgSurf;
 		SDL_SetSurfaceBlendMode(p->megaSurface, SDL_BLENDMODE_NONE);
+		printf("MEGA SURFACE %s\n", filename);
 	}
 	else
 	{
-		/* Regular surface */
-		TEXFBO tex;
+		if (!p) {
+			/* Regular surface */
+			TEXFBO tex;
 
-		try
-		{
-			tex = shState->texPool().request(imgSurf->w, imgSurf->h);
-		}
-		catch (const Exception &e)
-		{
-			SDL_FreeSurface(imgSurf);
-			throw e;
-		}
+			try
+			{
+				tex = shState->texPool().request(imgSurf->w, imgSurf->h);
+			}
+			catch (const Exception &e)
+			{
+				SDL_FreeSurface(imgSurf);
+				throw e;
+			}
 
-		p = new BitmapPrivate(this);
-		p->gl = tex;
+			p = new BitmapPrivate(this);
+			p->gl = tex;
+		}
 
 		TEX::bind(p->gl.tex);
 		TEX::uploadImage(p->gl.width, p->gl.height, imgSurf->pixels, GL_RGBA);
@@ -292,6 +337,17 @@ Bitmap::Bitmap(const char *filename)
 	}
 
 	p->addTaintedArea(rect());
+}
+
+Bitmap::Bitmap(const char *filename)
+{
+	BitmapOpenHandler handler;
+	shState->fileSystem().openRead(handler, filename);
+	SDL_Surface *imgSurf = handler.surf;
+
+	fromSurf(imgSurf, filename);
+
+	addBitmapDownload(filename, this);
 }
 
 Bitmap::Bitmap(int width, int height)
@@ -1322,3 +1378,8 @@ void Bitmap::releaseResources()
 
 	delete p;
 }
+
+void getXHR(char * filename) {
+
+}
+

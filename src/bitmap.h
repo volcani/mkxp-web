@@ -48,6 +48,10 @@ public:
 	int height() const;
 	IntRect rect() const;
 
+	void (*reloadCallback)(void *) = NULL;
+	void * reloadCallbackData = NULL;
+	void fromSurf(SDL_Surface *, const char *);
+
 	void blt(int x, int y,
 	         const Bitmap &source, IntRect rect,
 	         int opacity = 255);
@@ -123,7 +127,9 @@ private:
 	void releaseResources();
 	const char *klassName() const { return "bitmap"; }
 
-	BitmapPrivate *p;
+	BitmapPrivate *p = NULL;
 };
+
+void getXHR(char * filename);
 
 #endif // BITMAP_H

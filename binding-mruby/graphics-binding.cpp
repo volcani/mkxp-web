@@ -20,6 +20,7 @@
 */
 
 #include "graphics.h"
+#include "bitmap.h"
 #include "sharedstate.h"
 #include "binding-util.h"
 #include "exception.h"
@@ -104,6 +105,14 @@ DEF_GRA_PROP_B(ShowCursor)
 	mrb_define_module_function(mrb, module, prop_name_s "=", graphics##Set##PropName, MRB_ARGS_REQ(1)); \
 }
 
+MRB_METHOD(graphicsGetXHR)
+{
+	char *filename;
+	mrb_get_args(mrb, "z", &filename);
+	getXHR(filename);
+	return mrb_nil_value();
+}
+
 void graphicsBindingInit(mrb_state *mrb)
 {
 	RClass *module = mrb_define_module(mrb, "Graphics");
@@ -112,6 +121,8 @@ void graphicsBindingInit(mrb_state *mrb)
 	mrb_define_module_function(mrb, module, "freeze", graphicsFreeze, MRB_ARGS_NONE());
 	mrb_define_module_function(mrb, module, "transition", graphicsTransition, MRB_ARGS_OPT(3));
 	mrb_define_module_function(mrb, module, "frame_reset", graphicsFrameReset, MRB_ARGS_NONE());
+
+	mrb_define_module_function(mrb, module, "get_xhr", graphicsGetXHR, MRB_ARGS_OPT(1));
 
 	INIT_GRA_PROP_BIND( FrameRate,  "frame_rate"  );
 	INIT_GRA_PROP_BIND( FrameCount, "frame_count" );

@@ -29,7 +29,7 @@
 
 DEF_TYPE(Bitmap);
 
-MRB_METHOD(bitmapInitialize)
+__attribute__ ((optnone)) MRB_METHOD(bitmapInitialize)
 {
 	Bitmap *b = 0;
 
@@ -65,7 +65,7 @@ MRB_METHOD(bitmapInitialize)
 	return self;
 }
 
-MRB_METHOD(bitmapWidth)
+__attribute__ ((optnone)) MRB_METHOD(bitmapWidth)
 {
 	Bitmap *b = getPrivateData<Bitmap>(mrb, self);
 
@@ -304,7 +304,7 @@ MRB_METHOD(bitmapSetFont)
 INITCOPY_FUN(Bitmap)
 
 
-void
+void __attribute__ ((optnone))
 bitmapBindingInit(mrb_state *mrb)
 {
 	RClass *klass = defineClass(mrb, "Bitmap");
