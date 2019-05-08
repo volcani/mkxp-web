@@ -63,12 +63,14 @@
 void reloadBitmap(void * arg) {
 	emscripten_fetch_t * fetch = (emscripten_fetch_t *) arg;
 	try {
-		SDL_Surface * imgSurf = IMG_LoadTyped_RW(SDL_RWFromConstMem(fetch->data, fetch->numBytes), 1, "");
 		Bitmap * bitmap = ((Bitmap*)fetch->userData);
-		bitmap->fromSurf(imgSurf, fetch->url);
+		if (!bitmap->isDisposed()) {
+			SDL_Surface * imgSurf = IMG_LoadTyped_RW(SDL_RWFromConstMem(fetch->data, fetch->numBytes), 1, "");
+			bitmap->fromSurf(imgSurf, fetch->url);
 
-		if (bitmap->reloadCallback)
-			bitmap->reloadCallback(bitmap->reloadCallbackData);
+			if (bitmap->reloadCallback)
+				bitmap->reloadCallback(bitmap->reloadCallbackData);
+		}
 	} catch (const Exception &e) {}
 	emscripten_fetch_close(fetch);
 }
