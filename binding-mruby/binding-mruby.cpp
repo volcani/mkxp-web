@@ -91,7 +91,7 @@ void graphicsBindingInit(mrb_state *);
 /* From module_rpg.c */
 extern const uint8_t rpg_mrb[];
 
-static void __attribute__ ((optnone)) mrbBindingInit(mrb_state *mrb)
+static void mrbBindingInit(mrb_state *mrb)
 {
 	int arena = mrb_gc_arena_save(mrb);
 
@@ -262,7 +262,7 @@ runMrbFile(mrb_state *mrb, const char *filename)
 static MrbData * mrbData;
 static mrb_state * static_scriptmrb;
 
-static void __attribute__ ((optnone)) main_update_loop() {
+static void main_update_loop() {
 	mrb_state * mrb = (mrb_state *) static_cast<mrb_state*>(shState->bindingData());
 	mrb_load_nstring_cxt(mrb, "main_update_loop", 16, NULL);
 #ifdef __EMSCRIPTEN__
@@ -406,7 +406,7 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 #endif
 }
 
-static void __attribute__ ((optnone)) mrbBindingMain()
+static void mrbBindingMain()
 {
 	mrb_state *mrb = mrb_open();
 
@@ -457,7 +457,7 @@ void downloadFailed(emscripten_fetch_t *fetch) {
 	emscripten_fetch_close(fetch);
 }
 
-void __attribute__ ((optnone)) supermainloop() {
+void supermainloop() {
 	if (assetQ > 0) return;
 
 	if (initialized) {
@@ -468,7 +468,7 @@ void __attribute__ ((optnone)) supermainloop() {
 	}
 }
 
-static void __attribute__ ((optnone)) mrbBindingExecute()
+static void mrbBindingExecute()
 {
 	assetQ = 1;
 	emscripten_fetch_attr_t attr;

@@ -96,7 +96,7 @@ MRB_METHOD(disposableIsDisposed)
 }
 
 template<class C>
-static __attribute__ ((optnone)) void disposableBindingInit(mrb_state *mrb, RClass *klass)
+static void disposableBindingInit(mrb_state *mrb, RClass *klass)
 {
 	mrb_define_method(mrb, klass, "dispose", disposableDispose<C>, MRB_ARGS_NONE());
 	mrb_define_method(mrb, klass, "disposed?", disposableIsDisposed<C>, MRB_ARGS_NONE());
