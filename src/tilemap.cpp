@@ -281,6 +281,7 @@ struct TilemapPrivate
 		/* Animation state */
 		uint8_t frameIdx;
 		uint8_t aniIdx;
+		int aniIndices[7];
 	} tiles;
 
 	FlashMap flashMap;
@@ -432,8 +433,12 @@ struct TilemapPrivate
 
 			usableATs.push_back(i);
 
-			if (autotiles[i]->width() > autotileW)
+			if (autotiles[i]->width() > autotileW) {
 				animatedATs.push_back(i);
+				tiles.aniIndices[i] = 2;
+			} else {
+				tiles.aniIndices[i] = 0;
+			}
 		}
 
 		tiles.animated = !animatedATs.empty();
@@ -514,19 +519,8 @@ struct TilemapPrivate
 
 			GLMeta::blitSource(autotile->getGLTypes());
 
-			if (blitW <= autotileW && tiles.animated)
-			{
-				/* Static autotile */
-				for (int j = 0; j < 4; ++j)
-					GLMeta::blitRectangle(IntRect(0, 0, blitW, blitH),
-					                      Vec2i(autotileW*j, atInd*autotileH));
-			}
-			else
-			{
-				/* Animated autotile */
-				GLMeta::blitRectangle(IntRect(0, 0, blitW, blitH),
-				                      Vec2i(0, atInd*autotileH));
-			}
+			GLMeta::blitRectangle(IntRect(0, 0, blitW, blitH),
+			                      Vec2i(0, atInd*autotileH));
 		}
 
 		GLMeta::blitEnd();
@@ -771,6 +765,7 @@ struct TilemapPrivate
 			TilemapShader &tilemapShader = shState->shaders().tilemap;
 			tilemapShader.bind();
 			tilemapShader.setAniIndex(tiles.frameIdx);
+			tilemapShader.setAniIndices(tiles.aniIndices);
 			shaderVar = &tilemapShader;
 		}
 		else

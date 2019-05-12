@@ -219,9 +219,17 @@ public:
 	TilemapShader();
 
 	void setAniIndex(int value);
+	void setAniIndices(int value[]);
 
 private:
 	GLint u_aniIndex;
+	GLint u_t1Ani;
+	GLint u_t2Ani;
+	GLint u_t3Ani;
+	GLint u_t4Ani;
+	GLint u_t5Ani;
+	GLint u_t6Ani;
+	GLint u_t7Ani;
 };
 
 class FlashMapShader : public ShaderBase

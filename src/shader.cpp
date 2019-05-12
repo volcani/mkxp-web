@@ -520,6 +520,13 @@ TilemapShader::TilemapShader()
 	ShaderBase::init();
 
 	GET_U(aniIndex);
+	GET_U(t1Ani);
+	GET_U(t2Ani);
+	GET_U(t3Ani);
+	GET_U(t4Ani);
+	GET_U(t5Ani);
+	GET_U(t6Ani);
+	GET_U(t7Ani);
 }
 
 void TilemapShader::setAniIndex(int value)
@@ -527,6 +534,16 @@ void TilemapShader::setAniIndex(int value)
 	gl.Uniform1f(u_aniIndex, value);
 }
 
+void TilemapShader::setAniIndices(int value[])
+{
+	gl.Uniform1f(u_t1Ani, value[0]);
+	gl.Uniform1f(u_t2Ani, value[1]);
+	gl.Uniform1f(u_t3Ani, value[2]);
+	gl.Uniform1f(u_t4Ani, value[3]);
+	gl.Uniform1f(u_t5Ani, value[4]);
+	gl.Uniform1f(u_t6Ani, value[5]);
+	gl.Uniform1f(u_t7Ani, value[6]);
+}
 
 
 FlashMapShader::FlashMapShader()
