@@ -397,13 +397,22 @@ void EventThread::process(RGSSThreadData &rtData)
 			break;
 
 		case SDL_FINGERDOWN :
-			i = event.tfinger.fingerId;
-			touchState.fingers[i].down = true;
+			if (event.tfinger.x * winW > rtData.screenOffset.x &&
+				event.tfinger.x * winW < winW - rtData.screenOffset.x) {
+				i = event.tfinger.fingerId;
+				touchState.fingers[i].down = true;
+				touchState.fingers[i].x = event.tfinger.x * winW;
+				touchState.fingers[i].y = event.tfinger.y * winH;
+			}
+			break;
 
 		case SDL_FINGERMOTION :
-			i = event.tfinger.fingerId;
-			touchState.fingers[i].x = event.tfinger.x * winW;
-			touchState.fingers[i].y = event.tfinger.y * winH;
+			if (event.tfinger.x * winW > rtData.screenOffset.x &&
+				event.tfinger.x * winW < winW - rtData.screenOffset.x) {
+				i = event.tfinger.fingerId;
+				touchState.fingers[i].x = event.tfinger.x * winW;
+				touchState.fingers[i].y = event.tfinger.y * winH;
+			}
 			break;
 
 		case SDL_FINGERUP :
