@@ -25,6 +25,12 @@
 #include "binding-types.h"
 #include "exception.h"
 
+#ifdef __ANDROID__
+extern "C" {
+	void sendMessageJNI(int, int);
+}
+#endif
+
 RB_METHOD(graphicsUpdate)
 {
 	RB_UNUSED_PARAM;
@@ -208,6 +214,37 @@ DEF_GRA_PROP_B(ShowCursor)
 	_rb_define_module_function(module, prop_name_s "=", graphics##Set##PropName); \
 }
 
+#ifdef __ANDROID__
+RB_METHOD(graphicsSendMessage)
+{
+	RB_UNUSED_PARAM;
+
+	int typ = 0;
+	int msg = 0;
+
+	rb_get_args(argc, argv, "ii", &typ, &msg RB_ARG_END);
+
+	sendMessageJNI(typ, msg);
+
+	return Qnil;
+}
+
+RB_METHOD(graphicsSetOverlay)
+{
+	RB_UNUSED_PARAM;
+
+	int id = 0;
+
+	rb_get_args(argc, argv, "i", &id RB_ARG_END);
+
+	shState->graphics().setOverlay(id);
+
+	sendMessageJNI(705, id);
+
+	return Qnil;
+}
+#endif
+
 void graphicsBindingInit()
 {
 	VALUE module = rb_define_module("Graphics");
@@ -218,6 +255,11 @@ void graphicsBindingInit()
 	_rb_define_module_function(module, "frame_reset", graphicsFrameReset);
 
 	_rb_define_module_function(module, "__reset__", graphicsReset);
+
+#ifdef __ANDROID__
+	_rb_define_module_function(module, "send_message", graphicsSendMessage);
+	_rb_define_module_function(module, "set_overlay", graphicsSetOverlay);
+#endif
 
 	INIT_GRA_PROP_BIND( FrameRate,  "frame_rate"  );
 	INIT_GRA_PROP_BIND( FrameCount, "frame_count" );
