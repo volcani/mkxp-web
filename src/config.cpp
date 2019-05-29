@@ -480,7 +480,9 @@ parseOverlayButtonDesc(const ptree &pt, TouchOverlay::Button &out)
 static void
 parseOverlayDesc(const ptree &pt, TouchOverlay &out)
 {
-	out.image = pt.get<std::string>("image");
+	for (auto &img : pt.get_child("images")) {
+		out.images[img.second.get<int>("id")] = img.second.get<std::string>("file");
+	}
 
 	const ptree &buttons = pt.get_child("buttons");
 	for (ptree::const_iterator ci = buttons.begin(); ci != buttons.end(); ++ci)

@@ -503,12 +503,16 @@ struct GraphicsPrivate
 		TEXFBO::allocEmpty(frozenScene, scRes.x, scRes.y);
 		TEXFBO::linkFBO(frozenScene);
 
+		setOverlay(0);
+
 		FloatRect screenRect(0, 0, scRes.x, scRes.y);
 		screenQuad.setTexPosRect(screenRect, screenRect);
 
 		fpsLimiter.resetFrameAdjust();
-		
-		const std::string &olImage = rtData->config.touchOverlay.image;
+	}
+
+	void setOverlay(int id) {
+		const std::string &olImage = threadData->config.touchOverlay.images[id];
 		if (!olImage.empty())
 		{
 			SDL_RWops *ops = SDL_RWFromFile(olImage.c_str(), "rb");
@@ -860,6 +864,11 @@ void Graphics::transition(int duration,
 void Graphics::frameReset()
 {
 	p->fpsLimiter.resetFrameAdjust();
+}
+
+void Graphics::setOverlay(int id)
+{
+	p->setOverlay(id);
 }
 
 static void guardDisposed() {}

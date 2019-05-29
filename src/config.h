@@ -24,11 +24,12 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <set>
 
 struct TouchOverlay
 {
-	std::string image;
+	std::map<int, std::string> images;
 
 	struct Button
 	{
