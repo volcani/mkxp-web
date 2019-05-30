@@ -525,7 +525,7 @@ findFontsFolderCB(void *data, const char *, const char *fname)
 	while (*s && i < sizeof(buffer))
 		buffer[i++] = tolower(*s++);
 
-    buffer[5] = '\0';
+	buffer[5] = '\0';
 
 	if (strcmp(buffer, "fonts") == 0)
 		PHYSFS_enumerate(fname, fontSetEnumCB, data);
