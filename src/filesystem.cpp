@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <vector>
 #include <stack>
+#include <cassert>
 
 #ifdef __APPLE__
 #include <iconv.h>

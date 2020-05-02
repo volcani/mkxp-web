@@ -21,9 +21,9 @@
 
 #include "config.h"
 
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/variables_map.hpp>
+//#include <boost/program_options/options_description.hpp>
+//#include <boost/program_options/parsers.hpp>
+//#include <boost/program_options/variables_map.hpp>
 
 #include <SDL_filesystem.h>
 
@@ -33,7 +33,6 @@
 #include "debugwriter.h"
 #include "util.h"
 #include "sdl-util.h"
-#include "iniconfig.h"
 
 #ifdef INI_ENCODING
 extern "C" {
@@ -141,8 +140,8 @@ std::set<T> setFromVec(const std::vector<T> &vec)
 	return std::set<T>(vec.begin(), vec.end());
 }
 
-typedef std::vector<std::string> StringVec;
-namespace po = boost::program_options;
+//typedef std::vector<std::string> StringVec;
+//namespace po = boost::program_options;
 
 #define CONF_FILE "mkxp.conf"
 
@@ -151,6 +150,14 @@ Config::Config()
 
 void Config::read(int argc, char *argv[])
 {
+	gameFolder = "game";
+	defScreenW = 640;
+	defScreenH = 480;
+	enableBlitting = true;
+	smoothScaling = true;
+	subImageFix = false;
+	
+#if 0
 #define PO_DESC_ALL \
 	PO_DESC(rgssVersion, int, 0) \
 	PO_DESC(debugMode, bool, false) \
@@ -267,6 +274,8 @@ void Config::read(int argc, char *argv[])
 
 #undef PO_DESC
 #undef PO_DESC_ALL
+#endif
+	preloadScripts.insert("win32_wrap.rb");
 
 	rgssVersion = clamp(rgssVersion, 0, 3);
 
@@ -299,6 +308,7 @@ static void setupScreenSize(Config &conf)
 
 void Config::readGameINI()
 {
+
 	if (!customScript.empty())
 	{
 		game.title = baseName(customScript);
@@ -310,33 +320,29 @@ void Config::readGameINI()
 
 		return;
 	}
+#if 0
+	po::options_description podesc;
+	podesc.add_options()
+	        ("Game.Title", po::value<std::string>())
+	        ("Game.Scripts", po::value<std::string>())
+	        ;
+
+	po::variables_map vm;
+#endif
 
 	std::string iniFilename = execName + ".ini";
 	SDLRWStream iniFile(iniFilename.c_str(), "r");
-
+#if 0
 	if (iniFile)
 	{
-		INIConfiguration ic;
-		if(ic.load(iniFile.stream()))
+		try
 		{
-			GUARD_ALL( game.title = ic.getStringProperty("Game", "Title"); );
-			GUARD_ALL( game.scripts = ic.getStringProperty("Game", "Scripts"); );
-
-			strReplace(game.scripts, '\\', '/');
-
-			if (game.title.empty())
-			{
-				Debug() << iniFilename + ": Could not find Game.Title property";
-			}
-
-			if (game.scripts.empty())
-			{
-				Debug() << iniFilename + ": Could not find Game.Scripts property";
-			}
+			po::store(po::parse_config_file(iniFile.stream(), podesc, true), vm);
+			po::notify(vm);
 		}
-		else
+		catch (po::error &error)
 		{
-			Debug() << iniFilename + ": Failed to parse ini file";
+			Debug() << iniFilename + ":" << error.what();
 		}
 	}
 	else
@@ -344,6 +350,13 @@ void Config::readGameINI()
 		Debug() << "FAILED to open" << iniFilename;
 	}
 
+	GUARD_ALL( game.title = vm["Game.Title"].as<std::string>(); );
+	GUARD_ALL( game.scripts = vm["Game.Scripts"].as<std::string>(); );
+#endif
+	game.scripts = "Data/Scripts.rxdata";
+
+
+	strReplace(game.scripts, '\\', '/');
 #ifdef INI_ENCODING
 	/* Can add more later */
 	const char *languages[] =
