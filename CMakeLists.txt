@@ -158,6 +158,7 @@ set(MAIN_SOURCE
 	src/main.cpp
 	src/audio.cpp
 	src/bitmap.cpp
+	src/emscripten.cpp
 	src/eventthread.cpp
 	src/filesystem.cpp
 	src/font.cpp
