@@ -334,9 +334,7 @@ elseif(BINDING STREQUAL "MRUBY")
 		binding-mruby/sceneelement-binding.h
 		binding-mruby/viewportelement-binding.h
 		binding-mruby/serializable-binding.h
-		binding-mruby/mrb-ext/file.h
 		binding-mruby/mrb-ext/rwmem.h
-		binding-mruby/mrb-ext/marshal.h
 	)
 	set(BINDING_SOURCE
 		binding-mruby/binding-mruby.cpp
@@ -353,11 +351,9 @@ elseif(BINDING STREQUAL "MRUBY")
 		binding-mruby/graphics-binding.cpp
 		binding-mruby/input-binding.cpp
 		binding-mruby/table-binding.cpp
-		binding-mruby/mrb-ext/file.cpp
 		binding-mruby/mrb-ext/file-helper.cpp
 		binding-mruby/mrb-ext/rwmem.cpp
 		binding-mruby/mrb-ext/kernel.cpp
-		binding-mruby/mrb-ext/time.cpp
 	)
 elseif(BINDING STREQUAL "NULL")
 	set(BINDING_SOURCE
@@ -426,18 +422,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME}
 	#ruby-static.a
 
-	sigc-2.0.a	
-	physfs.a
-	SDL_sound.a
-	pixman-1.a
-	
+	sigc-2.0.a physfs.a SDL_sound.a pixman-1.a
+	#sigc-2.0.x86.a	physfs.x86.a SDL_sound.x86.a pixman-1.x86.a
+
 	mruby.a
 
 	#ruby-static.x86.a
-	#sigc-2.0.x86.a	
-	#physfs.x86.a
-	#SDL_sound.x86.a
-	#pixman-1.x86.a
 	#crypt
 	#dl
 	#pthread
@@ -464,7 +454,6 @@ SET(ASYNCIFY "-s ASYNCIFY=1 -s 'ASYNCIFY_IMPORTS=[\"load_file_async_js\"]'")
 
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
-
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EMS_FLAGS} ${ASYNCIFY} -s INITIAL_MEMORY=536870912 -lopenal --preload-file game -s DISABLE_EXCEPTION_CATCHING=1 -s ASSERTIONS=0 -s SAFE_HEAP=0 -s MINIFY_HTML=0  --shell-file shell.html -s ERROR_ON_UNDEFINED_SYMBOLS=1 -s ALLOW_MEMORY_GROWTH=1 --no-heap-copy")
 
 set_target_properties(
