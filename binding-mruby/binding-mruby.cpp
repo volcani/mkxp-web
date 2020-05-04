@@ -48,6 +48,13 @@
 #include "binding-util.h"
 #include "binding-types.h"
 #include "mrb-ext/marshal.h"
+#include "mrb-ext/file-helper.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
+#include <stdio.h>
 
 static void mrbBindingExecute();
 static void mrbBindingTerminate();
@@ -65,7 +72,6 @@ ScriptBinding *scriptBinding = &scriptBindingImpl;
 
 void fileBindingInit(mrb_state *);
 void timeBindingInit(mrb_state *);
-void marshalBindingInit(mrb_state *);
 void kernelBindingInit(mrb_state *);
 
 void tableBindingInit(mrb_state *);
@@ -82,9 +88,6 @@ void inputBindingInit(mrb_state *);
 void audioBindingInit(mrb_state *);
 void graphicsBindingInit(mrb_state *);
 
-/* From module_rpg.c */
-extern const uint8_t mrbModuleRPG[];
-
 static void mrbBindingInit(mrb_state *mrb)
 {
 	int arena = mrb_gc_arena_save(mrb);
@@ -92,7 +95,6 @@ static void mrbBindingInit(mrb_state *mrb)
 	/* Init standard classes */
 	fileBindingInit(mrb);
 	timeBindingInit(mrb);
-	marshalBindingInit(mrb);
 	kernelBindingInit(mrb);
 
 	/* Init RGSS classes */
@@ -111,13 +113,10 @@ static void mrbBindingInit(mrb_state *mrb)
 	audioBindingInit(mrb);
 	graphicsBindingInit(mrb);
 
-	/* Load RPG module */
-	mrb_load_irep(mrb, mrbModuleRPG);
-
 	/* Load global constants */
 	mrb_define_global_const(mrb, "MKXP", mrb_true_value());
 
-	mrb_value debug = rb_bool_new(shState->config().editor.debug);
+	mrb_value debug = mrb_bool_value(shState->config().editor.debug);
 	if (rgssVer == 1)
 		mrb_define_global_const(mrb, "DEBUG", debug);
 	else if (rgssVer >= 2)
@@ -254,6 +253,14 @@ runMrbFile(mrb_state *mrb, const char *filename)
 	fclose(f);
 }
 
+mrb_state * static_mrb;
+mrb_state * static_scriptmrb;
+mrbc_context * static_ctx;
+
+void main_update_loop() {
+	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
+}
+
 static void
 runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 {
@@ -273,23 +280,22 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 
 	/* We use a secondary util state to unmarshal the scripts */
 	mrb_state *scriptMrb = mrb_open();
-	SDL_RWops ops;
-
-	shState->fileSystem().openReadRaw(ops, scriptPack.c_str());
 
 	mrb_value scriptArray = mrb_nil_value();
 	std::string readError;
 
 	try
 	{
-		scriptArray = marshalLoadInt(scriptMrb, &ops);
+		SDL_rw_file_helper fileHelper;
+		fileHelper.filename = scriptPack.c_str();
+		char * contents = fileHelper.read();
+		mrb_value rawdata = mrb_str_new_static(mrb, contents, fileHelper.length);
+		scriptArray = mrb_marshal_load(mrb, rawdata);
 	}
 	catch (const Exception &e)
 	{
 		readError = std::string(": ") + e.msg;
 	}
-
-	SDL_RWclose(&ops);
 
 	if (!mrb_array_p(scriptArray))
 	{
@@ -298,7 +304,7 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 		return;
 	}
 
-	int scriptCount = mrb_ary_len(scriptMrb, scriptArray);
+	int scriptCount = RARRAY_LEN(scriptArray);
 
 	std::string decodeBuffer;
 	decodeBuffer.resize(0x1000);
@@ -357,11 +363,28 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 
 		mrb_gc_arena_restore(mrb, ai);
 
-		if (mrb->exc)
+		if (mrb->exc) {
+			printf("%s - err\n", ctx->filename);
+			return;
+		}
+	}
+	static_mrb = mrb;
+	static_scriptmrb = scriptMrb;
+
+#ifdef __EMSCRIPTEN__
+	/* Use loop for emscripten */
+	main_update_loop();
+	checkException(static_mrb);
+	emscripten_set_main_loop(main_update_loop, 0, 0);
+#else
+	while (true) {
+		main_update_loop();
+		SDL_Delay(3);
+		if (static_mrb->exc)
 			break;
 	}
-
 	mrb_close(scriptMrb);
+#endif
 }
 
 static void mrbBindingExecute()
@@ -370,29 +393,27 @@ static void mrbBindingExecute()
 
 	shState->setBindingData(mrb);
 
-	MrbData mrbData(mrb);
-	mrb->ud = &mrbData;
+	MrbData * mrbData = new MrbData(mrb);
+	mrb->ud = mrbData;
 
 	mrb_define_module_function(mrb, mrb->kernel_module, "time_op",
 	                           mkxpTimeOp, MRB_ARGS_OPT(2) | MRB_ARGS_BLOCK());
 
 	mrbBindingInit(mrb);
 
-	mrbc_context *ctx = mrbc_context_new(mrb);
-	ctx->capture_errors = 1;
+	static_ctx = mrbc_context_new(mrb);
+	static_ctx->capture_errors = 1;
 
 	const Config &conf = shState->rtData().config;
 	const std::string &customScript = conf.customScript;
-//	const std::string &mrbFile = conf.mrbFile;
 	(void) runMrbFile; // FIXME mrbFile support on ice for now
 
 	if (!customScript.empty())
-		runCustomScript(mrb, ctx, customScript.c_str());
-//	else if (!mrbFile.empty())
-//		runMrbFile(mrb, mrbFile.c_str());
+		runCustomScript(mrb, static_ctx, customScript.c_str());
 	else
-		runRMXPScripts(mrb, ctx);
+		runRMXPScripts(mrb, static_ctx);
 
+#ifndef __EMSCRIPTEN__
 	checkException(mrb);
 
 	shState->rtData().rqTermAck.set();
@@ -400,6 +421,7 @@ static void mrbBindingExecute()
 
 	mrbc_context_free(mrb, ctx);
 	mrb_close(mrb);
+#endif
 }
 
 static void mrbBindingTerminate()

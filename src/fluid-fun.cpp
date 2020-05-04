@@ -13,7 +13,11 @@
 #elif __WINDOWS__
 #define FLUID_LIB "fluidsynth.dll"
 #else
+#ifdef __EMSCRIPTEN__
+#define FLUID_LIB "fluidsynth.bc"
+#else
 #error "platform not recognized"
+#endif
 #endif
 
 struct FluidFunctions fluid;
@@ -22,6 +26,10 @@ static void *so;
 
 void initFluidFunctions()
 {
+#ifdef __EMSCRIPTEN__
+	goto fail;
+#endif
+
 #ifdef SHARED_FLUID
 
 #define FLUID_FUN(name, type) \

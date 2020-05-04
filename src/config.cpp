@@ -150,14 +150,9 @@ Config::Config()
 
 void Config::read(int argc, char *argv[])
 {
-	gameFolder = "game";
-	defScreenW = 640;
-	defScreenH = 480;
-	enableBlitting = true;
-	smoothScaling = true;
-	subImageFix = false;
-	
-#if 0
+#undef PO_DESC
+#define PO_DESC(a, b, c) a = c;
+
 #define PO_DESC_ALL \
 	PO_DESC(rgssVersion, int, 0) \
 	PO_DESC(debugMode, bool, false) \
@@ -194,6 +189,19 @@ void Config::read(int argc, char *argv[])
 	PO_DESC(pathCache, bool, true) \
 	PO_DESC(useScriptNames, bool, false)
 
+	PO_DESC_ALL;
+	gameFolder = "game";
+	fixedFramerate = -1;
+	syncToRefreshrate = false;
+	rgssVersion = 1;
+	defScreenW = 640;
+	defScreenH = 480;
+	enableBlitting = false;
+
+#undef PO_DESC
+#undef PO_DESC_ALL
+
+#if 0
 // Not gonna take your shit boost
 #define GUARD_ALL( exp ) try { exp } catch(...) {}
 

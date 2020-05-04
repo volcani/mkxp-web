@@ -30,6 +30,7 @@
 
 #include "../binding-util.h"
 #include "marshal.h"
+#include "file-helper.h"
 #include "sharedstate.h"
 #include "eventthread.h"
 #include "exception.h"
@@ -136,11 +137,12 @@ MRB_FUNCTION(kernelRand)
 MRB_FUNCTION(kernelSrand)
 {
 	srandCalled = true;
+	
+	mrb_int seed;
+	int argc = mrb_get_args(mrb, "|i", &seed);
 
-	if (mrb->c->ci->argc == 1)
+	if (argc == 1)
 	{
-		mrb_int seed;
-		mrb_get_args(mrb, "i", &seed);
 		srand(seed);
 
 		int oldSeed = currentSeed;
@@ -171,18 +173,18 @@ MRB_FUNCTION(kernelLoadData)
 	const char *filename;
 	mrb_get_args(mrb, "z", &filename);
 
-	SDL_RWops ops;
-	GUARD_EXC( shState->fileSystem().openRead(ops, filename); )
-
 	mrb_value obj;
-	try { obj = marshalLoadInt(mrb, &ops); }
+	try {
+		SDL_rw_file_helper fileHelper;
+		fileHelper.filename = filename;
+		char * contents = fileHelper.read();
+		mrb_value rawdata = mrb_str_new_static(mrb, contents, fileHelper.length);
+		obj = mrb_marshal_load(mrb, rawdata);
+	}
 	catch (const Exception &e)
 	{
-		SDL_RWclose(&ops);
 		raiseMrbExc(mrb, e);
 	}
-
-	SDL_RWclose(&ops);
 
 	return obj;
 }
@@ -194,18 +196,17 @@ MRB_FUNCTION(kernelSaveData)
 
 	mrb_get_args(mrb, "oz", &obj, &filename);
 
-	SDL_RWops *ops = SDL_RWFromFile(filename, "w");
-	if (!ops)
-		mrb_raise(mrb, getMrbData(mrb)->exc[SDL], SDL_GetError());
-
-	try { marshalDumpInt(mrb, ops, obj); }
+	try {
+		mrb_value dumped = mrb_nil_value();
+		mrb_marshal_dump(mrb, obj, dumped);
+		SDL_rw_file_helper fileHelper;
+		fileHelper.filename = filename;
+		fileHelper.write(RSTRING_PTR(dumped));
+	}
 	catch (const Exception &e)
 	{
-		SDL_RWclose(ops);
 		raiseMrbExc(mrb, e);
 	}
-
-	SDL_RWclose(ops);
 
 	return mrb_nil_value();
 }

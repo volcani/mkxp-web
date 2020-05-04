@@ -418,6 +418,10 @@ struct FPSLimiter
 private:
 	void delayTicks(uint64_t ticks)
 	{
+#ifdef __EMSCRIPTEN__
+	return;
+#endif
+
 #if defined(HAVE_NANOSLEEP)
 		struct timespec req;
 		uint64_t nsec = ticks / tickFreqNS;
@@ -751,6 +755,7 @@ void Graphics::transition(int duration,
 		/* We need to clean up transMap properly before
 		 * a possible longjmp, so we manually test for
 		 * shutdown/reset here */
+
 		if (p->threadData->rqTerm)
 		{
 			glState.blend.pop();

@@ -27,11 +27,13 @@
 
 #include <mruby/hash.h>
 #include <string.h>
+#include "eventthread.h"
 
 MRB_FUNCTION(inputUpdate)
 {
 	MRB_FUN_UNUSED_PARAM;
 
+	shState->eThread().process(shState->rtData());
 	shState->input().update();
 
 	return mrb_nil_value();

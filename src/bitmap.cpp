@@ -241,9 +241,13 @@ struct BitmapOpenHandler : FileSystem::OpenHandler
 	    : surf(0)
 	{}
 
-	bool tryRead(SDL_RWops &ops, const char *ext)
+	bool tryRead(SDL_RWops &ops, const char *ext, const char * fullPath)
 	{
+#ifdef __EMSCRIPTEN__
+		surf = IMG_Load(fullPath);
+#else
 		surf = IMG_LoadTyped_RW(&ops, 1, ext);
+#endif
 		return surf != 0;
 	}
 };
@@ -254,9 +258,11 @@ Bitmap::Bitmap(const char *filename)
 	shState->fileSystem().openRead(handler, filename);
 	SDL_Surface *imgSurf = handler.surf;
 
-	if (!imgSurf)
+	if (!imgSurf) {
+		printf("ERROR OCCURED LOADING IMAGE %s : %s\n", filename, SDL_GetError());
 		throw Exception(Exception::SDLError, "Error loading image '%s': %s",
 		                filename, SDL_GetError());
+	}
 
 	p->ensureFormat(imgSurf, SDL_PIXELFORMAT_ABGR8888);
 

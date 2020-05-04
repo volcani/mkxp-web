@@ -23,7 +23,8 @@
 #include "boost-hash.h"
 
 #include <stdint.h>
-#include <string.h>
+#include <string>
+#include <cstring>
 
 struct RGSS_entryData
 {
@@ -293,7 +294,8 @@ processDirectories(RGSS_archiveData *data, BoostSet<std::string> &topLevel,
 		if (slash)
 			nameBuf[i] = '\0';
 
-		topLevel.insert(nameBuf);
+		std::string nameBufStr(nameBuf);
+		topLevel.insert(nameBufStr);
 
 		if (slash)
 			nameBuf[i] = '/';
@@ -639,3 +641,4 @@ const PHYSFS_Archiver RGSS3_Archiver =
 	RGSS_stat,
 	RGSS_closeArchive
 };
+

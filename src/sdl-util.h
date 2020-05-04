@@ -1,7 +1,10 @@
 #ifndef SDLUTIL_H
 #define SDLUTIL_H
 
+#ifndef __EMSCRIPTEN__
 #include <SDL_atomic.h>
+#endif
+
 #include <SDL_thread.h>
 #include <SDL_rwops.h>
 
@@ -17,21 +20,37 @@ struct AtomicFlag
 
 	void set()
 	{
+#ifdef __EMSCRIPTEN__
+		atom = true;
+#else
 		SDL_AtomicSet(&atom, 1);
+#endif
 	}
 
 	void clear()
 	{
+#ifdef __EMSCRIPTEN__
+		atom = false;
+#else
 		SDL_AtomicSet(&atom, 0);
+#endif
 	}
 
 	operator bool() const
 	{
+#ifdef __EMSCRIPTEN__
+		return atom;
+#else
 		return SDL_AtomicGet(&atom);
+#endif
 	}
 
 private:
+#ifdef __EMSCRIPTEN__
+	bool atom = false;
+#else
 	mutable SDL_atomic_t atom;
+#endif
 };
 
 template<class C, void (C::*func)()>

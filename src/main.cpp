@@ -19,7 +19,7 @@
 ** along with mkxp.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <alc.h>
+#include <AL/alc.h>
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -111,11 +111,6 @@ int rgssThreadFun(void *userdata)
 
 	printGLInfo();
 
-	bool vsync = conf.vsync || conf.syncToRefreshrate;
-	SDL_GL_SetSwapInterval(vsync ? 1 : 0);
-
-	GLDebugLogger dLogger;
-
 	/* Setup AL context */
 	ALCcontext *alcCtx = alcCreateContext(threadData->alcDev, 0);
 
@@ -145,6 +140,7 @@ int rgssThreadFun(void *userdata)
 	/* Start script execution */
 	scriptBinding->execute();
 
+#ifndef __EMSCRIPTEN__
 	threadData->rqTermAck.set();
 	threadData->ethread->requestTerminate();
 
@@ -152,6 +148,10 @@ int rgssThreadFun(void *userdata)
 
 	alcDestroyContext(alcCtx);
 	SDL_GL_DeleteContext(glCtx);
+#endif
+
+	bool vsync = conf.vsync || conf.syncToRefreshrate;
+	SDL_GL_SetSwapInterval(vsync ? 1 : 0);
 
 	return 0;
 }
@@ -239,7 +239,11 @@ int main(int argc, char *argv[])
 	assert(conf.rgssVersion >= 1 && conf.rgssVersion <= 3);
 	printRgssVersion(conf.rgssVersion);
 
+#ifdef __EMSCRIPTEN__
+	int imgFlags = 0;
+#else
 	int imgFlags = IMG_INIT_PNG | IMG_INIT_JPG;
+#endif
 	if (IMG_Init(imgFlags) != imgFlags)
 	{
 		showInitError(std::string("Error initializing SDL_image: ") + SDL_GetError());
@@ -324,12 +328,18 @@ int main(int argc, char *argv[])
 	/* Load and post key bindings */
 	rtData.bindingUpdateMsg.post(loadBindings(conf));
 
-	/* Start RGSS thread */
-	SDL_Thread *rgssThread =
-	        SDL_CreateThread(rgssThreadFun, "rgss", &rtData);
-
 	/* Start event processing */
 	eventThread.process(rtData);
+
+#ifdef __EMSCRIPTEN__
+	::rgssThreadFun(&rtData);
+	printf("Exiting main function\n");
+	return 0;
+#endif
+
+	/* Start RGSS thread */
+        rgssThreadFun(&rtData);
+	return 0;
 
 	/* Request RGSS thread to stop */
 	rtData.rqTerm.set();
@@ -350,8 +360,8 @@ int main(int argc, char *argv[])
 
 	/* If RGSS thread ack'd request, wait for it to shutdown,
 	 * otherwise abandon hope and just end the process as is. */
-	if (rtData.rqTermAck)
-		SDL_WaitThread(rgssThread, 0);
+	if (rtData.rqTermAck);
+//		SDL_WaitThread(rgssThread, 0);
 	else
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, conf.windowTitle.c_str(),
 		                         "The RGSS script seems to be stuck and mkxp will now force quit", win);

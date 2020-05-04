@@ -32,14 +32,15 @@ MRB_METHOD(viewportInitialize)
 {
 	Viewport *v;
 
-	if (mrb->c->ci->argc == 1)
+	mrb_value one, two, three, four;
+	int argc = mrb_get_args(mrb, "o|iii", &one, &two, &three, &four);
+
+	if (argc == 1)
 	{
 		/* The rect arg is only used to init the viewport,
 		 * and does NOT replace its 'rect' property */
-		mrb_value rectObj;
+		mrb_value rectObj = one;
 		Rect *rect;
-
-		mrb_get_args(mrb, "o", &rectObj);
 
 		rect = getPrivateDataCheck<Rect>(mrb, rectObj, RectType);
 
@@ -47,9 +48,10 @@ MRB_METHOD(viewportInitialize)
 	}
 	else
 	{
-		mrb_int x, y, width, height;
-
-		mrb_get_args(mrb, "iiii", &x, &y, &width, &height);
+		mrb_int x = mrb_fixnum(one),
+			y = mrb_fixnum(two),
+			width = mrb_fixnum(three),
+			height = mrb_fixnum(four);
 
 		v = new Viewport(x, y, width, height);
 	}

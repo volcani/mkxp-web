@@ -53,7 +53,7 @@ public:
 		 * After this function returns, ops becomes invalid, so don't take
 		 * references to it. Instead, copy the structure without closing
 		 * if you need to further read from it later. */
-		virtual bool tryRead(SDL_RWops &ops, const char *ext) = 0;
+		virtual bool tryRead(SDL_RWops &ops, const char *ext, const char *fullPath) = 0;
 	};
 
 	void openRead(OpenHandler &handler,
@@ -66,7 +66,6 @@ public:
 
 	/* Does not perform extension supplementing */
 	bool exists(const char *filename);
-
 private:
 	FileSystemPrivate *p;
 };

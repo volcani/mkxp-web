@@ -454,10 +454,11 @@ MRB_METHOD(fileReadLines)
 	FILE *f = p->fp();
 
 	mrb_value arg;
-	mrb_get_args(mrb, "|o", &arg);
+	int argc = mrb_get_args(mrb, "|o", &arg);
 
 	const char *rs = "\n"; (void) rs;
-	if (mrb->c->ci->argc > 0)
+
+	if (argc > 0)
 	{
 		Debug() << "FIXME: File.readlines: rs not implemented";
 
@@ -596,7 +597,7 @@ fileBindingInit(mrb_state *mrb)
 	mrb_define_method(mrb, klass, "path", fileGetPath, MRB_ARGS_NONE());
 
 	/* FileTest */
-	RClass *module = mrb_define_module(mrb, "FileTest");
+	RClass *module = mrb_define_module(mrb, "MKXPFileTest");
 	mrb_define_module_function(mrb, module, "exist?", fileTestDoesExist, MRB_ARGS_REQ(1));
 	mrb_define_module_function(mrb, module, "directory?", fileTestIsDirectory, MRB_ARGS_REQ(1));
 	mrb_define_module_function(mrb, module, "file?", fileTestIsFile, MRB_ARGS_REQ(1));

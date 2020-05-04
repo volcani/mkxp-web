@@ -625,7 +625,7 @@ openReadEnumCB(void *d, const char *dirpath, const char *filename)
 
 	const char *ext = findExt(filename);
 
-	if (data.handler.tryRead(data.ops, ext))
+	if (data.handler.tryRead(data.ops, ext, fullPath))
 		data.stopSearching = true;
 
 	++data.matchCount;
@@ -678,11 +678,15 @@ void FileSystem::openRead(OpenHandler &handler, const char *filename)
 		PHYSFS_enumerate(dir, openReadEnumCB, &data);
 	}
 
-	if (data.physfsError)
+	if (data.physfsError) {
+		printf("PHYSFS ERROR %s\n", filename);
 		throw Exception(Exception::PHYSFSError, "PhysFS: %s", data.physfsError);
+	}
 
-	if (data.matchCount == 0)
+	if (data.matchCount == 0) {
+		printf("NO SUCH FILE %s\n", filename);
 		throw Exception(Exception::NoFileError, "%s", filename);
+	}
 }
 
 void FileSystem::openReadRaw(SDL_RWops &ops,

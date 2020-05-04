@@ -29,9 +29,8 @@
 #include <SDL_touch.h>
 #include <SDL_rect.h>
 
-#include <al.h>
-#include <alc.h>
-#include <alext.h>
+#include <AL/al.h>
+#include <AL/alc.h>
 
 #include "sharedstate.h"
 #include "graphics.h"
@@ -41,18 +40,10 @@
 
 #include <string.h>
 
-typedef void (ALC_APIENTRY *LPALCDEVICEPAUSESOFT) (ALCdevice *device);
-typedef void (ALC_APIENTRY *LPALCDEVICERESUMESOFT) (ALCdevice *device);
-
-#define AL_DEVICE_PAUSE_FUN \
-	AL_FUN(DevicePause, LPALCDEVICEPAUSESOFT) \
-	AL_FUN(DeviceResume, LPALCDEVICERESUMESOFT)
 
 struct ALCFunctions
 {
-#define AL_FUN(name, type) type name;
-	AL_DEVICE_PAUSE_FUN
-#undef AL_FUN
+
 } static alc;
 
 static void
@@ -62,13 +53,9 @@ initALCFunctions(ALCdevice *alcDev)
 		return;
 
 	Debug() << "ALC_SOFT_pause_device present";
-
-#define AL_FUN(name, type) alc. name = (type) alcGetProcAddress(alcDev, "alc" #name "SOFT");
-	AL_DEVICE_PAUSE_FUN;
-#undef AL_FUN
 }
 
-#define HAVE_ALC_DEVICE_PAUSE alc.DevicePause
+#define HAVE_ALC_DEVICE_PAUSE false
 
 uint8_t EventThread::keyStates[];
 EventThread::JoyState EventThread::joyState;
@@ -112,12 +99,17 @@ void EventThread::process(RGSSThreadData &rtData)
 	SDL_Window *win = rtData.window;
 	UnidirMessage<Vec2i> &windowSizeMsg = rtData.windowSizeMsg;
 
-	initALCFunctions(rtData.alcDev);
+	static bool once = true;
+	if (once) {
+		initALCFunctions(rtData.alcDev);
 
-	// XXX this function breaks input focus on OSX
+		// XXX this function breaks input focus on OSX
 #ifndef __MACOSX__
-	SDL_SetEventFilter(eventFilter, &rtData);
+		SDL_SetEventFilter(eventFilter, &rtData);
 #endif
+
+		once = false;
+	}
 
 	fullscreen = rtData.config.fullscreen;
 	int toggleFSMod = rtData.config.anyAltToggleFS ? KMOD_ALT : KMOD_LALT;
@@ -159,13 +151,8 @@ void EventThread::process(RGSSThreadData &rtData)
 
 	SettingsMenu *sMenu = 0;
 
-	while (true)
+	while (SDL_PollEvent(&event))
 	{
-		if (!SDL_WaitEvent(&event))
-		{
-			Debug() << "EventThread: Event error";
-			break;
-		}
 
 		if (sMenu && sMenu->onEvent(event))
 		{
@@ -459,11 +446,13 @@ void EventThread::process(RGSSThreadData &rtData)
 			break;
 	}
 
+#ifndef __EMSCRIPTEN__
 	/* Just in case */
 	rtData.syncPoint.resumeThreads();
 
 	if (SDL_JoystickGetAttached(js))
 		SDL_JoystickClose(js);
+#endif
 
 	delete sMenu;
 }
@@ -477,8 +466,10 @@ int EventThread::eventFilter(void *data, SDL_Event *event)
 	case SDL_APP_WILLENTERBACKGROUND :
 		Debug() << "SDL_APP_WILLENTERBACKGROUND";
 
+#if HAVE_ALC_DEVICE_PAUSE
 		if (HAVE_ALC_DEVICE_PAUSE)
 			alc.DevicePause(rtData.alcDev);
+#endif
 
 		rtData.syncPoint.haltThreads();
 
@@ -495,8 +486,10 @@ int EventThread::eventFilter(void *data, SDL_Event *event)
 	case SDL_APP_DIDENTERFOREGROUND :
 		Debug() << "SDL_APP_DIDENTERFOREGROUND";
 
+#if HAVE_ALC_DEVICE_PAUSE
 		if (HAVE_ALC_DEVICE_PAUSE)
 			alc.DeviceResume(rtData.alcDev);
+#endif
 
 		rtData.syncPoint.resumeThreads();
 
@@ -593,18 +586,11 @@ void EventThread::requestShowCursor(bool mode)
 	SDL_PushEvent(&event);
 }
 
+#include <stdio.h>
 void EventThread::showMessageBox(const char *body, int flags)
 {
 	msgBoxDone.clear();
-
-	SDL_Event event;
-	event.user.code = flags;
-	event.user.data1 = strdup(body);
-	event.type = usrIdStart + REQUEST_MESSAGEBOX;
-	SDL_PushEvent(&event);
-
-	/* Keep repainting screen while box is open */
-	shState->graphics().repaintWait(msgBoxDone);
+	printf(body);
 	/* Prevent endless loops */
 	resetInputStates();
 }

@@ -210,7 +210,7 @@ struct ALStreamOpenHandler : FileSystem::OpenHandler
 	    : srcOps(&srcOps), looped(looped), source(0)
 	{}
 
-	bool tryRead(SDL_RWops &ops, const char *ext)
+	bool tryRead(SDL_RWops &ops, const char *ext, const char *fullPath)
 	{
 		/* Copy this because we need to keep it around,
 		 * as we will continue reading data from it later */

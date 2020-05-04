@@ -27,25 +27,25 @@
 #include "binding-util.h"
 #include "binding-types.h"
 
+#include <mruby/string.h>
+
 DEF_TYPE(Bitmap);
 
 MRB_METHOD(bitmapInitialize)
 {
 	Bitmap *b = 0;
 
-	if (mrb->c->ci->argc == 1)
-	{
-		char *filename;
-		mrb_get_args(mrb, "z", &filename);
+	mrb_value one, two;
+	int argc = mrb_get_args(mrb, "o|i", &one, &two);
 
-		GUARD_EXC( b = new Bitmap(filename); )
+	if (argc == 1)
+	{
+		const char *fmt = RSTRING_CSTR(mrb, one);
+		GUARD_EXC( b = new Bitmap(fmt); )
 	}
 	else
 	{
-		mrb_int width, height;
-		mrb_get_args(mrb, "ii", &width, &height);
-
-		GUARD_EXC( b = new Bitmap(width, height); )
+		GUARD_EXC( b = new Bitmap(mrb_fixnum(one), mrb_fixnum(two)); )
 	}
 
 	setPrivateData(self, b, BitmapType);
@@ -149,12 +149,14 @@ MRB_METHOD(bitmapFillRect)
 	mrb_value colorObj;
 	Color *color;
 
-	if (mrb->c->ci->argc == 2)
-	{
-		mrb_value rectObj;
-		Rect *rect;
+	mrb_value one, two, three, four, five;
+	int argc = mrb_get_args(mrb, "oo|iio", &one, &two, &three, &four, &five);
 
-		mrb_get_args(mrb, "oo", &rectObj, &colorObj);
+	if (argc == 2)
+	{
+		mrb_value rectObj = one;
+		colorObj = two;
+		Rect *rect;
 
 		rect = getPrivateDataCheck<Rect>(mrb, rectObj, RectType);
 		color = getPrivateDataCheck<Color>(mrb, colorObj, ColorType);
@@ -163,9 +165,11 @@ MRB_METHOD(bitmapFillRect)
 	}
 	else
 	{
-		mrb_int x, y, width, height;
-
-		mrb_get_args(mrb, "iiiio", &x, &y, &width, &height, &colorObj);
+		mrb_int x = mrb_fixnum(one),
+			y = mrb_fixnum(two),
+			width = mrb_fixnum(three),
+			height = mrb_fixnum(four);
+		colorObj = five;
 
 		color = getPrivateDataCheck<Color>(mrb, colorObj, ColorType);
 
