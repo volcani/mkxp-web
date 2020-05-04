@@ -6,7 +6,7 @@ Project(mkxp)
 option(SHARED_FLUID "Dynamically link fluidsynth at build time" OFF)
 option(WORKDIR_CURRENT "Keep current directory on startup" OFF)
 option(FORCE32 "Force 32bit compile on 64bit OS" OFF)
-set(BINDING "MRI" CACHE STRING "The Binding Type (MRI, MRUBY, NULL)")
+set(BINDING "MRUBY" CACHE STRING "The Binding Type (MRI, MRUBY, NULL)")
 set(EXTERNAL_LIB_PATH "" CACHE PATH "External precompiled lib prefix")
 
 ## Misc setup ##
@@ -83,18 +83,12 @@ if (EXTERNAL_LIB_PATH)
 	endif()
 endif()
 
-pkg_check_modules(SIGCXX        REQUIRED sigc++-2.0)
-pkg_check_modules(PIXMAN        REQUIRED pixman-1)
-pkg_check_modules(PHYSFS        REQUIRED physfs>=2.1)
-pkg_check_modules(VORBISFILE    REQUIRED vorbisfile)
-pkg_check_modules(SDL2          REQUIRED sdl2)
-pkg_check_modules(SDL2_TTF      REQUIRED SDL2_ttf)
-pkg_check_modules(SDL2_IMAGE    REQUIRED SDL2_image)
-pkg_check_modules(SDL_SOUND     REQUIRED SDL_sound)
-
-find_package(Boost 1.49 COMPONENTS program_options REQUIRED)
-find_package(OpenAL REQUIRED)
-find_package(ZLIB REQUIRED)
+#pkg_check_modules(VORBISFILE    REQUIRED vorbisfile)
+#pkg_check_modules(SDL2          REQUIRED sdl2)
+#pkg_check_modules(SDL2_TTF      REQUIRED SDL2_ttf)
+#pkg_check_modules(SDL2_IMAGE    REQUIRED SDL2_image)
+#find_package(OpenAL REQUIRED)
+#find_package(ZLIB REQUIRED)
 
 ## Setup main source ##
 
@@ -295,7 +289,6 @@ source_group("Embedded Source" FILES ${EMBEDDED_INPUT} ${EMBEDDED_SOURCE})
 
 if (BINDING STREQUAL "MRI")
 	set(MRIVERSION "2.1" CACHE STRING "Version of MRI to link with")
-	pkg_check_modules(MRI REQUIRED ruby-${MRIVERSION})
 	list(APPEND DEFINES
 		BINDING_MRI
 	)
@@ -329,7 +322,6 @@ if (BINDING STREQUAL "MRI")
 		binding-mri/tilemapvx-binding.cpp
 	)
 elseif(BINDING STREQUAL "MRUBY")
-	message(FATAL_ERROR "Mruby support in CMake needs to be finished")
 	list(APPEND DEFINES
 		BINDING_MRUBY
 	)
@@ -360,9 +352,8 @@ elseif(BINDING STREQUAL "MRUBY")
 		binding-mruby/graphics-binding.cpp
 		binding-mruby/input-binding.cpp
 		binding-mruby/table-binding.cpp
-		binding-mruby/module_rpg.c
 		binding-mruby/mrb-ext/file.cpp
-		binding-mruby/mrb-ext/marshal.cpp
+		binding-mruby/mrb-ext/file-helper.cpp
 		binding-mruby/mrb-ext/rwmem.cpp
 		binding-mruby/mrb-ext/kernel.cpp
 		binding-mruby/mrb-ext/time.cpp
@@ -391,12 +382,16 @@ if(APPLE)
 endif()
 
 link_directories(
-	${SIGCXX_LIBRARY_DIRS}
-	${PIXMAN_LIBRARY_DIRS}
-	${PHYSFS_LIBRARY_DIRS}
-	${SDL2_LIBRARY_DIRS} # Blindly assume other SDL bits are in same directory
-	${Boost_LIBRARY_DIR}
-	${MRI_LIBDIR}
+	../libsigc++-2.10.3/sigc++/.libs
+	../SDL_sound/.libs
+	../pixman-0.40.0/pixman/.libs
+	../physfs-3.0.2
+	../ruby
+	#../mruby/build/host/lib
+	../mruby/build/x86_64-pc-linux-gnu/lib
+	libs
+
+	${SDL2_LIBRARY_DIRS}
 )
 
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE
@@ -413,19 +408,37 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PRIVATE
 	src
 	windows
-	${SIGCXX_INCLUDE_DIRS}
-	${PIXMAN_INCLUDE_DIRS}
-	${PHYSFS_INCLUDE_DIRS}
-	${SDL2_INCLUDE_DIRS} # Blindly assume other SDL bits are in same directory
-	${Boost_INCLUDE_DIR}
-	${MRI_INCLUDE_DIRS}
-	${VORBISFILE_INCLUDE_DIRS}
+	../libsigc++-2.10.3
+	../SDL_sound
+	../pixman-0.40.0/pixman
+	../physfs-3.0.2/src
+	../mruby/include
+	..
+
+	${SDL2_INCLUDE_DIRS}
+	#${VORBISFILE_INCLUDE_DIRS}
 	${FLUID_INCLUDE_DIRS}
 	${OPENAL_INCLUDE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	${SIGCXX_LIBRARIES}
+	#ruby-static.a
+
+	sigc-2.0.a	
+	physfs.a
+	SDL_sound.a
+	pixman-1.a
+	
+	mruby.a
+
+	#ruby-static.x86.a
+	#sigc-2.0.x86.a	
+	#physfs.x86.a
+	#SDL_sound.x86.a
+	#pixman-1.x86.a
+	#crypt
+	#dl
+
 	${SDL2_LIBRARIES}
 	${SDL2_IMAGE_LIBRARIES}
 	${SDL2_TTF_LIBRARIES}
@@ -433,13 +446,28 @@ target_link_libraries(${PROJECT_NAME}
 	${PHYSFS_LIBRARIES}
 	${PIXMAN_LIBRARIES}
 	${Boost_LIBRARIES}
-	${MRI_LIBRARIES}
 	${VORBISFILE_LIBRARIES}
 	${FLUID_LIBRARIES}
 	${OPENAL_LIBRARY}
 	${ZLIB_LIBRARY}
 
 	${PLATFORM_LIBRARIES}
+)
+
+SET(EMS_FLAGS " -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_ZLIB=1 -s USE_OGG=1 -s USE_VORBIS=1 -s USE_SDL_TTF=2 --std=c++14 -O2 -g")
+#SET(ERR_FLAGS " -Werror")
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS}")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS}")
+
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EMS_FLAGS} -s TOTAL_MEMORY=1073741824 -lopenal --preload-file game --use-preload-plugins -s DISABLE_EXCEPTION_CATCHING=1 -s ASSERTIONS=0 -s SAFE_HEAP=0 -s MINIFY_HTML=0")
+
+set_target_properties(
+    ${PROJECT_NAME}
+    PROPERTIES 
+        OUTPUT_NAME "mkxp"
+        SUFFIX ".html"
+#        SUFFIX ".out"
 )
 
 PostBuildMacBundle(${PROJECT_NAME} "" "${PLATFORM_COPY_LIBS}")
