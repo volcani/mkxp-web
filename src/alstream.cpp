@@ -302,8 +302,12 @@ void ALStream::startStream(float offset)
 	startOffset = offset;
 	procFrames = offset * source->sampleRate();
 
+#ifdef __EMSCRIPTEN__
+	streamData();
+#else
 	thread = createSDLThread
 		<ALStream, &ALStream::streamData>(this, threadName);
+#endif
 }
 
 void ALStream::pauseStream()
@@ -362,7 +366,6 @@ void ALStream::streamData()
 {
 	/* Fill up queue */
 	bool firstBuffer = true;
-	ALDataSource::Status status;
 
 	if (threadTermReq)
 		return;
@@ -406,74 +409,82 @@ void ALStream::streamData()
 
 	/* Wait for buffers to be consumed, then
 	 * refill and queue them up again */
+#ifndef __EMSCRIPTEN__
 	while (true)
 	{
-		shState->rtData().syncPoint.passSecondarySync();
-
-		ALint procBufs = AL::Source::getProcBufferCount(alSrc);
-
-		while (procBufs--)
-		{
-			if (threadTermReq)
-				break;
-
-			AL::Buffer::ID buf = AL::Source::unqueueBuffer(alSrc);
-
-			/* If something went wrong, try again later */
-			if (buf == AL::Buffer::ID(0))
-				break;
-
-			if (buf == lastBuf)
-			{
-				/* Reset the processed sample count so
-				 * querying the playback offset returns 0.0 again */
-				procFrames = source->loopStartFrames();
-				lastBuf = AL::Buffer::ID(0);
-			}
-			else
-			{
-				/* Add the frame count contained in this
-				 * buffer to the total count */
-				ALint bits = AL::Buffer::getBits(buf);
-				ALint size = AL::Buffer::getSize(buf);
-				ALint chan = AL::Buffer::getChannels(buf);
-
-				if (bits != 0 && chan != 0)
-					procFrames += ((size / (bits / 8)) / chan);
-			}
-
-			if (sourceExhausted)
-				continue;
-
-			status = source->fillBuffer(buf);
-
-			if (status == ALDataSource::Error)
-			{
-				sourceExhausted.set();
-				return;
-			}
-
-			AL::Source::queueBuffer(alSrc, buf);
-
-			/* In case of buffer underrun,
-			 * start playing again */
-			if (AL::Source::getState(alSrc) == AL_STOPPED)
-				AL::Source::play(alSrc);
-
-			/* If this was the last buffer before the data
-			 * source loop wrapped around again, mark it as
-			 * such so we can catch it and reset the processed
-			 * sample count once it gets unqueued */
-			if (status == ALDataSource::WrapAround)
-				lastBuf = buf;
-
-			if (status == ALDataSource::EndOfStream)
-				sourceExhausted.set();
-		}
+		streamDevice();
 
 		if (threadTermReq)
 			break;
-
 		SDL_Delay(AUDIO_SLEEP);
+	}
+#endif
+}
+
+void ALStream::update() {
+	if (threadTermReq)
+		return;
+
+	shState->rtData().syncPoint.passSecondarySync();
+
+	ALint procBufs = AL::Source::getProcBufferCount(alSrc);
+
+	while (procBufs--)
+	{
+		if (threadTermReq)
+			break;
+
+		AL::Buffer::ID buf = AL::Source::unqueueBuffer(alSrc);
+
+		/* If something went wrong, try again later */
+		if (buf == AL::Buffer::ID(0))
+			break;
+
+		if (buf == lastBuf)
+		{
+			/* Reset the processed sample count so
+			 * querying the playback offset returns 0.0 again */
+			procFrames = source->loopStartFrames();
+			lastBuf = AL::Buffer::ID(0);
+		}
+		else
+		{
+			/* Add the frame count contained in this
+			 * buffer to the total count */
+			ALint bits = AL::Buffer::getBits(buf);
+			ALint size = AL::Buffer::getSize(buf);
+			ALint chan = AL::Buffer::getChannels(buf);
+
+			if (bits != 0 && chan != 0)
+				procFrames += ((size / (bits / 8)) / chan);
+		}
+
+		if (sourceExhausted)
+			continue;
+
+		status = source->fillBuffer(buf);
+
+		if (status == ALDataSource::Error)
+		{
+			sourceExhausted.set();
+			return;
+		}
+
+		AL::Source::queueBuffer(alSrc, buf);
+
+		/* In case of buffer underrun,
+		 * start playing again */
+		if (AL::Source::getState(alSrc) == AL_STOPPED)
+			AL::Source::play(alSrc);
+
+		/* If this was the last buffer before the data
+		 * source loop wrapped around again, mark it as
+		 * such so we can catch it and reset the processed
+		 * sample count once it gets unqueued */
+		if (status == ALDataSource::WrapAround)
+			lastBuf = buf;
+
+		if (status == ALDataSource::EndOfStream)
+			sourceExhausted.set();
 	}
 }

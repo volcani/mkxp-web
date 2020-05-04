@@ -27,7 +27,7 @@
 #define DEF_PLAY_STOP(entity) \
 	MRB_FUNCTION(audio_##entity##Play) \
 	{ \
-		return mrb_nil_value();char *filename; \
+		char *filename; \
 		mrb_int volume = 100; \
 		mrb_int pitch = 100; \
 		mrb_get_args(mrb, "z|ii", &filename, &volume, &pitch); \
@@ -36,7 +36,7 @@
 	} \
 	MRB_FUNCTION(audio_##entity##Stop) \
 	{ \
-		return mrb_nil_value();MRB_FUN_UNUSED_PARAM; \
+		MRB_FUN_UNUSED_PARAM; \
 		shState->audio().entity##Stop(); \
 		return mrb_nil_value(); \
 	}
@@ -44,7 +44,7 @@
 #define DEF_FADE(entity) \
 MRB_FUNCTION(audio_##entity##Fade) \
 { \
-	return mrb_nil_value();mrb_int time; \
+	mrb_int time; \
 	mrb_get_args(mrb, "i", &time); \
 	shState->audio().entity##Fade(time); \
 	return mrb_nil_value(); \

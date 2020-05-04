@@ -71,22 +71,27 @@ struct AudioPrivate
 	      syncPoint(rtData.syncPoint)
 	{
 		meWatch.state = MeNotPlaying;
+#ifndef __EMSCRIPTEN__
 		meWatch.thread = createSDLThread
 			<AudioPrivate, &AudioPrivate::meWatchFun>(this, "audio_mewatch");
+#endif
 	}
 
 	~AudioPrivate()
 	{
 		meWatch.termReq.set();
+#ifndef __EMSCRIPTEN__
 		SDL_WaitThread(meWatch.thread, 0);
+#endif
 	}
 
 	void meWatchFun()
 	{
 		const float fadeOutStep = 1.f / (200  / AUDIO_SLEEP);
 		const float fadeInStep  = 1.f / (1000 / AUDIO_SLEEP);
-
+#ifndef __EMSCRIPTEN__
 		while (true)
+#endif
 		{
 			syncPoint.passSecondarySync();
 
@@ -231,8 +236,9 @@ struct AudioPrivate
 				break;
 			}
 			}
-
+#ifndef __EMSCRIPTEN__
 			SDL_Delay(AUDIO_SLEEP);
+#endif
 		}
 	}
 };
@@ -247,6 +253,7 @@ void Audio::bgmPlay(const char *filename,
                     int pitch,
                     float pos)
 {
+	printf("PLAYING BGM %s\n", filename);
 	p->bgm.play(filename, volume, pitch, pos);
 }
 
@@ -331,6 +338,16 @@ void Audio::reset()
 	p->bgs.stop();
 	p->me.stop();
 	p->se.stop();
+}
+
+void Audio::update()
+{
+#ifdef __EMSCRIPTEN__
+	p->bgm.update();
+	p->bgm.update();
+	p->me.update();
+	p->meWatchFun();
+#endif
 }
 
 Audio::~Audio() { delete p; }

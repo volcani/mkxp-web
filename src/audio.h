@@ -69,6 +69,8 @@ public:
 
 	void reset();
 
+	void update();
+
 private:
 	Audio(RGSSThreadData &rtData);
 	~Audio();

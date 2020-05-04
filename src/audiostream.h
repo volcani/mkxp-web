@@ -140,6 +140,8 @@ struct AudioStream
 
 	float playingOffset();
 
+	void update();
+
 private:
 	float volumes[VolumeTypeCount];
 	void updateVolume();

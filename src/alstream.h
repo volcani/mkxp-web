@@ -23,12 +23,11 @@
 #define ALSTREAM_H
 
 #include "al-util.h"
+#include "aldatasource.h"
 #include "sdl-util.h"
 
 #include <string>
 #include <SDL_rwops.h>
-
-struct ALDataSource;
 
 #define STREAM_BUFS 3
 
@@ -104,6 +103,8 @@ struct ALStream
 	float queryOffset();
 	bool queryNativePitch();
 
+	void update();
+
 private:
 	void closeSource();
 	void openSource(const std::string &filename);
@@ -117,6 +118,8 @@ private:
 
 	/* thread func */
 	void streamData();
+
+	ALDataSource::Status status;
 };
 
 #endif // ALSTREAM_H

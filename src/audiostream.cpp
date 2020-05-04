@@ -203,12 +203,14 @@ void AudioStream::fadeOut(int duration)
 		return;
 	}
 
+#ifdef __EMSCRIPTEN__
 	if (fade.thread)
 	{
 		fade.reqFini.set();
 		SDL_WaitThread(fade.thread, 0);
 		fade.thread = 0;
 	}
+#endif
 
 	fade.active.set();
 	fade.msStep = 1.0f / duration;
@@ -216,8 +218,10 @@ void AudioStream::fadeOut(int duration)
 	fade.reqTerm.clear();
 	fade.startTicks = SDL_GetTicks();
 
+#ifndef __EMSCRIPTEN__
 	fade.thread = createSDLThread
 		<AudioStream, &AudioStream::fadeOutThread>(this, fade.threadName);
+#endif
 
 	unlockStream();
 }
@@ -280,24 +284,38 @@ void AudioStream::finiFadeOutInt()
 
 void AudioStream::startFadeIn()
 {
+#ifdef __EMSCRIPTEN__
 	/* Previous fadein should always be terminated in play() */
 	assert(!fadeIn.thread);
+#endif
 
 	fadeIn.rqFini.clear();
 	fadeIn.rqTerm.clear();
 	fadeIn.startTicks = SDL_GetTicks();
 
+#ifdef __EMSCRIPTEN__
+	fadeInThread();
+#else
 	fadeIn.thread = createSDLThread
 		<AudioStream, &AudioStream::fadeInThread>(this, fadeIn.threadName);
+#endif
 }
 
 void AudioStream::fadeOutThread()
 {
+#ifndef __EMSCRIPTEN__
 	while (true)
+#else
+	if (fade.active)
+#endif
 	{
 		/* Just immediately terminate on request */
 		if (fade.reqTerm)
+#ifdef __EMSCRIPTEN__
+			return;
+#else
 			break;
+#endif
 
 		lockStream();
 
@@ -315,18 +333,26 @@ void AudioStream::fadeOutThread()
 
 			setVolume(FadeOut, 1.0f);
 			unlockStream();
-
+#ifdef __EMSCRIPTEN__
+			fade.active.clear();
+			return;
+#else
 			break;
+#endif
+
 		}
 
 		setVolume(FadeOut, resVol);
 
 		unlockStream();
-
+#ifndef __EMSCRIPTEN__
 		SDL_Delay(AUDIO_SLEEP);
+#endif
 	}
 
+#ifndef __EMSCRIPTEN__
 	fade.active.clear();
+#endif
 }
 
 void AudioStream::fadeInThread()
@@ -362,4 +388,10 @@ void AudioStream::fadeInThread()
 
 		SDL_Delay(AUDIO_SLEEP);
 	}
+}
+
+void AudioStream::update()
+{
+	fadeOutThread();
+	stream.update();
 }
