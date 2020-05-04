@@ -50,10 +50,6 @@
 #include "mrb-ext/marshal.h"
 #include "mrb-ext/file-helper.h"
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
-
 #include <stdio.h>
 
 static void mrbBindingExecute();
@@ -253,14 +249,6 @@ runMrbFile(mrb_state *mrb, const char *filename)
 	fclose(f);
 }
 
-mrb_state * static_mrb;
-mrb_state * static_scriptmrb;
-mrbc_context * static_ctx;
-
-void main_update_loop() {
-	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
-}
-
 static void
 runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 {
@@ -368,23 +356,8 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 			return;
 		}
 	}
-	static_mrb = mrb;
-	static_scriptmrb = scriptMrb;
 
-#ifdef __EMSCRIPTEN__
-	/* Use loop for emscripten */
-	main_update_loop();
-	checkException(static_mrb);
-	emscripten_set_main_loop(main_update_loop, 0, 0);
-#else
-	while (true) {
-		main_update_loop();
-		SDL_Delay(3);
-		if (static_mrb->exc)
-			break;
-	}
 	mrb_close(scriptMrb);
-#endif
 }
 
 static void mrbBindingExecute()
@@ -401,19 +374,18 @@ static void mrbBindingExecute()
 
 	mrbBindingInit(mrb);
 
-	static_ctx = mrbc_context_new(mrb);
-	static_ctx->capture_errors = 1;
+	mrbc_context * ctx = mrbc_context_new(mrb);
+	ctx->capture_errors = 1;
 
 	const Config &conf = shState->rtData().config;
 	const std::string &customScript = conf.customScript;
 	(void) runMrbFile; // FIXME mrbFile support on ice for now
 
 	if (!customScript.empty())
-		runCustomScript(mrb, static_ctx, customScript.c_str());
+		runCustomScript(mrb, ctx, customScript.c_str());
 	else
-		runRMXPScripts(mrb, static_ctx);
+		runRMXPScripts(mrb, ctx);
 
-#ifndef __EMSCRIPTEN__
 	checkException(mrb);
 
 	shState->rtData().rqTermAck.set();
@@ -421,7 +393,6 @@ static void mrbBindingExecute()
 
 	mrbc_context_free(mrb, ctx);
 	mrb_close(mrb);
-#endif
 }
 
 static void mrbBindingTerminate()

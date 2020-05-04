@@ -137,10 +137,12 @@ int rgssThreadFun(void *userdata)
 		return 0;
 	}
 
+	bool vsync = conf.vsync || conf.syncToRefreshrate;
+	SDL_GL_SetSwapInterval(vsync ? 1 : 0);
+
 	/* Start script execution */
 	scriptBinding->execute();
 
-#ifndef __EMSCRIPTEN__
 	threadData->rqTermAck.set();
 	threadData->ethread->requestTerminate();
 
@@ -148,10 +150,6 @@ int rgssThreadFun(void *userdata)
 
 	alcDestroyContext(alcCtx);
 	SDL_GL_DeleteContext(glCtx);
-#endif
-
-	bool vsync = conf.vsync || conf.syncToRefreshrate;
-	SDL_GL_SetSwapInterval(vsync ? 1 : 0);
 
 	return 0;
 }
@@ -331,15 +329,8 @@ int main(int argc, char *argv[])
 	/* Start event processing */
 	eventThread.process(rtData);
 
-#ifdef __EMSCRIPTEN__
-	::rgssThreadFun(&rtData);
-	printf("Exiting main function\n");
-	return 0;
-#endif
-
 	/* Start RGSS thread */
         rgssThreadFun(&rtData);
-	return 0;
 
 	/* Request RGSS thread to stop */
 	rtData.rqTerm.set();
