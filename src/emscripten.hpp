@@ -5,7 +5,9 @@
 #include <emscripten.h>
 
 extern "C" {
-	void load_file_async(const char* fullPathC);
+	void load_file_async_js(const char* fullPathC);
+
+	void load_file_async(const char* filename);
 }
 
 #endif

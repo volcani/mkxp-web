@@ -1,6 +1,8 @@
 #include "emscripten.hpp"
+#include "filesystem.h"
+#include "sharedstate.h"
 
-EM_JS(void, load_file_async, (const char* fullPathC), {
+EM_JS(void, load_file_async_js, (const char* fullPathC), {
 	Asyncify.handleSleep(function(wakeUp) {
 		const fullPath = UTF8ToString(fullPathC);
 
@@ -30,4 +32,21 @@ EM_JS(void, load_file_async, (const char* fullPathC), {
 		}, console.error);
 	});
 });
+
+struct LoadOpenHandler : FileSystem::OpenHandler
+{
+	LoadOpenHandler()
+	{}
+
+	bool tryRead(SDL_RWops &ops, const char *ext, const char *fullPath)
+	{
+		load_file_async_js(fullPath);
+		return true;
+	}
+};
+
+void load_file_async(const char * filename) {
+	LoadOpenHandler handler;
+	shState->fileSystem().openRead(handler, filename);
+}
 

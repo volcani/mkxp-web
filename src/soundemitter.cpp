@@ -30,6 +30,10 @@
 
 #include <SDL_sound.h>
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.hpp"
+#endif
+
 #define SE_CACHE_MEM (10*1024*1024) // 10 MB
 
 struct SoundBuffer
@@ -238,6 +242,10 @@ SoundBuffer *SoundEmitter::allocateBuffer(const std::string &filename)
 	else
 	{
 		/* Buffer not in cache, needs to be loaded */
+#ifdef __EMSCRIPTEN__
+		load_file_async(filename.c_str());
+#endif
+
 		SoundOpenHandler handler;
 		shState->fileSystem().openRead(handler, filename.c_str());
 		buffer = handler.buffer;

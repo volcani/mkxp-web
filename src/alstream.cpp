@@ -35,6 +35,10 @@
 #include <SDL_thread.h>
 #include <SDL_timer.h>
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.hpp"
+#endif
+
 ALStream::ALStream(LoopMode loopMode,
 		           const std::string &threadId)
 	: looped(loopMode == Looped),
@@ -256,6 +260,10 @@ struct ALStreamOpenHandler : FileSystem::OpenHandler
 
 void ALStream::openSource(const std::string &filename)
 {
+#ifdef __EMSCRIPTEN__
+	load_file_async(filename.c_str());
+#endif
+
 	ALStreamOpenHandler handler(srcOps, looped);
 	shState->fileSystem().openRead(handler, filename.c_str());
 	source = handler.source;
