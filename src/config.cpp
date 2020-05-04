@@ -197,6 +197,7 @@ void Config::read(int argc, char *argv[])
 	defScreenW = 640;
 	defScreenH = 480;
 	enableBlitting = false;
+	winResizable = false;
 
 #undef PO_DESC
 #undef PO_DESC_ALL
