@@ -414,7 +414,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	../pixman-0.40.0/pixman
 	../physfs-3.0.2/src
 	../mruby/include
-	..
+	../ruby/include
+	../ruby/.ext/include/x86_64-linux
 
 	${SDL2_INCLUDE_DIRS}
 	#${VORBISFILE_INCLUDE_DIRS}
@@ -439,6 +440,8 @@ target_link_libraries(${PROJECT_NAME}
 	#pixman-1.x86.a
 	#crypt
 	#dl
+	#pthread
+	#rt
 
 	${SDL2_LIBRARIES}
 	${SDL2_IMAGE_LIBRARIES}
@@ -455,13 +458,14 @@ target_link_libraries(${PROJECT_NAME}
 	${PLATFORM_LIBRARIES}
 )
 
-SET(EMS_FLAGS " -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_ZLIB=1 -s USE_OGG=1 -s USE_VORBIS=1 -s USE_SDL_TTF=2 --std=c++14 -O2 -g -s ASYNCIFY=1")
+SET(EMS_FLAGS " -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_ZLIB=1 -s USE_OGG=1 -s USE_VORBIS=1 -s USE_SDL_TTF=2 --std=c++14 -O3")
+SET(ASYNCIFY "-s ASYNCIFY=1 -s 'ASYNCIFY_IMPORTS=[\"load_file_async_js\"]'")
 #SET(ERR_FLAGS " -Werror")
 
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS}")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS}")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
 
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EMS_FLAGS} -s TOTAL_MEMORY=1073741824 -lopenal --preload-file game -s DISABLE_EXCEPTION_CATCHING=1 -s ASSERTIONS=0 -s SAFE_HEAP=0 -s MINIFY_HTML=0 -s 'ASYNCIFY_IMPORTS=[\"load_file_async_js\"]' --shell-file shell.html")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EMS_FLAGS} ${ASYNCIFY} -s INITIAL_MEMORY=536870912 -lopenal --preload-file game -s DISABLE_EXCEPTION_CATCHING=1 -s ASSERTIONS=0 -s SAFE_HEAP=0 -s MINIFY_HTML=0  --shell-file shell.html -s ERROR_ON_UNDEFINED_SYMBOLS=1 -s ALLOW_MEMORY_GROWTH=1 --no-heap-copy")
 
 set_target_properties(
     ${PROJECT_NAME}

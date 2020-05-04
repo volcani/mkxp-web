@@ -2,6 +2,8 @@
 #include "filesystem.h"
 #include "sharedstate.h"
 
+#ifdef __EMSCRIPTEN__
+
 EM_JS(void, load_file_async_js, (const char* fullPathC), {
 	Asyncify.handleSleep(function(wakeUp) {
 		// Get argument
@@ -54,4 +56,6 @@ void load_file_async(const char * filename) {
 	LoadOpenHandler handler;
 	shState->fileSystem().openRead(handler, filename);
 }
+
+#endif
 
