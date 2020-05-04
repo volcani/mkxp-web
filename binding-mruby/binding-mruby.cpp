@@ -65,9 +65,6 @@ ScriptBinding scriptBindingImpl =
 
 ScriptBinding *scriptBinding = &scriptBindingImpl;
 
-
-void fileBindingInit(mrb_state *);
-void timeBindingInit(mrb_state *);
 void kernelBindingInit(mrb_state *);
 
 void tableBindingInit(mrb_state *);
@@ -89,8 +86,6 @@ static void mrbBindingInit(mrb_state *mrb)
 	int arena = mrb_gc_arena_save(mrb);
 
 	/* Init standard classes */
-	fileBindingInit(mrb);
-	timeBindingInit(mrb);
 	kernelBindingInit(mrb);
 
 	/* Init RGSS classes */
