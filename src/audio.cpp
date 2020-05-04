@@ -253,7 +253,6 @@ void Audio::bgmPlay(const char *filename,
                     int pitch,
                     float pos)
 {
-	printf("PLAYING BGM %s\n", filename);
 	p->bgm.play(filename, volume, pitch, pos);
 }
 
