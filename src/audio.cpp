@@ -344,7 +344,7 @@ void Audio::update()
 {
 #ifdef __EMSCRIPTEN__
 	p->bgm.update();
-	p->bgm.update();
+	p->bgs.update();
 	p->me.update();
 	p->meWatchFun();
 #endif
