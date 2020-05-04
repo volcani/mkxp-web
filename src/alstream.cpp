@@ -285,7 +285,9 @@ void ALStream::stopStream()
 
 	if (thread)
 	{
+#ifndef __EMSCRIPTEN__
 		SDL_WaitThread(thread, 0);
+#endif
 		thread = 0;
 		needsRewind.set();
 	}
@@ -312,6 +314,7 @@ void ALStream::startStream(float offset)
 
 #ifdef __EMSCRIPTEN__
 	streamData();
+	thread = (SDL_Thread *) 1;
 #else
 	thread = createSDLThread
 		<ALStream, &ALStream::streamData>(this, threadName);
@@ -420,7 +423,7 @@ void ALStream::streamData()
 #ifndef __EMSCRIPTEN__
 	while (true)
 	{
-		streamDevice();
+		update();
 
 		if (threadTermReq)
 			break;
@@ -430,7 +433,7 @@ void ALStream::streamData()
 }
 
 void ALStream::update() {
-	if (threadTermReq)
+	if (!thread || threadTermReq)
 		return;
 
 	shState->rtData().syncPoint.passSecondarySync();

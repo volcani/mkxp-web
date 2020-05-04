@@ -284,10 +284,8 @@ void AudioStream::finiFadeOutInt()
 
 void AudioStream::startFadeIn()
 {
-#ifdef __EMSCRIPTEN__
 	/* Previous fadein should always be terminated in play() */
 	assert(!fadeIn.thread);
-#endif
 
 	fadeIn.rqFini.clear();
 	fadeIn.rqTerm.clear();
@@ -295,6 +293,7 @@ void AudioStream::startFadeIn()
 
 #ifdef __EMSCRIPTEN__
 	fadeInThread();
+	fadeIn.thread = (SDL_Thread *) 1;
 #else
 	fadeIn.thread = createSDLThread
 		<AudioStream, &AudioStream::fadeInThread>(this, fadeIn.threadName);
@@ -357,11 +356,18 @@ void AudioStream::fadeOutThread()
 
 void AudioStream::fadeInThread()
 {
+#ifndef __EMSCRIPTEN__
 	while (true)
+#else
+	if (fadeIn.thread)
+#endif
 	{
 		if (fadeIn.rqTerm)
+#ifndef __EMSCRIPTEN__
 			break;
-
+#else
+			return;
+#endif
 		lockStream();
 
 		/* Fade in duration is always 1 second */
@@ -377,7 +383,12 @@ void AudioStream::fadeInThread()
 			setVolume(FadeIn, 1.0f);
 			unlockStream();
 
+#ifdef __EMSCRIPTEN__
+			fadeIn.thread = 0;
+			return;
+#else
 			break;
+#endif
 		}
 
 		/* Quadratic increase (not really the same as
@@ -386,12 +397,15 @@ void AudioStream::fadeInThread()
 
 		unlockStream();
 
+#ifndef __EMSCRIPTEN__
 		SDL_Delay(AUDIO_SLEEP);
+#endif
 	}
 }
 
 void AudioStream::update()
 {
 	fadeOutThread();
+	fadeInThread();
 	stream.update();
 }
