@@ -191,13 +191,14 @@ void Config::read(int argc, char *argv[])
 
 	PO_DESC_ALL;
 	gameFolder = "game";
-	fixedFramerate = -1;
+	fixedFramerate = 40;
 	syncToRefreshrate = false;
 	rgssVersion = 1;
 	defScreenW = 640;
 	defScreenH = 480;
 	enableBlitting = false;
 	winResizable = false;
+	windowTitle = "KN_E";
 
 #undef PO_DESC
 #undef PO_DESC_ALL
