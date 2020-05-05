@@ -231,12 +231,16 @@ void AudioStream::fadeOut(int duration)
  * protected by a 'lock'/'unlock' pair */
 void AudioStream::lockStream()
 {
+#ifndef __EMSCRIPTEN__
 	SDL_LockMutex(streamMut);
+#endif
 }
 
 void AudioStream::unlockStream()
 {
+#ifndef __EMSCRIPTEN__
 	SDL_UnlockMutex(streamMut);
+#endif
 }
 
 void AudioStream::setVolume(VolumeType type, float value)

@@ -323,26 +323,34 @@ void ALStream::startStream(float offset)
 
 void ALStream::pauseStream()
 {
+#ifndef __EMSCRIPTEN__
 	SDL_LockMutex(pauseMut);
+#endif
 
 	if (AL::Source::getState(alSrc) != AL_PLAYING)
 		preemptPause = true;
 	else
 		AL::Source::pause(alSrc);
 
+#ifndef __EMSCRIPTEN__
 	SDL_UnlockMutex(pauseMut);
+#endif
 }
 
 void ALStream::resumeStream()
 {
+#ifndef __EMSCRIPTEN__
 	SDL_LockMutex(pauseMut);
+#endif
 
 	if (preemptPause)
 		preemptPause = false;
 	else
 		AL::Source::play(alSrc);
 
+#ifndef __EMSCRIPTEN__
 	SDL_UnlockMutex(pauseMut);
+#endif
 }
 
 void ALStream::checkStopped()

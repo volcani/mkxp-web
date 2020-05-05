@@ -40,7 +40,6 @@
 
 #include <string.h>
 
-
 struct ALCFunctions
 {
 
@@ -586,11 +585,10 @@ void EventThread::requestShowCursor(bool mode)
 	SDL_PushEvent(&event);
 }
 
-#include <stdio.h>
 void EventThread::showMessageBox(const char *body, int flags)
 {
 	msgBoxDone.clear();
-	printf(body);
+	printf("Message: %s", body);
 	/* Prevent endless loops */
 	resetInputStates();
 }
@@ -718,25 +716,31 @@ SyncPoint::Util::~Util()
 
 void SyncPoint::Util::lock()
 {
+#ifndef __EMSCRIPTEN__
 	locked.set();
+#endif
 }
 
 void SyncPoint::Util::unlock(bool multi)
 {
+#ifndef __EMSCRIPTEN__
 	locked.clear();
 
 	if (multi)
 		SDL_CondBroadcast(cond);
 	else
 		SDL_CondSignal(cond);
+#endif
 }
 
 void SyncPoint::Util::waitForUnlock()
 {
+#ifndef __EMSCRIPTEN__
 	SDL_LockMutex(mut);
 
 	while (locked)
 		SDL_CondWait(cond, mut);
 
 	SDL_UnlockMutex(mut);
+#endif
 }
