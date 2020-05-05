@@ -47,6 +47,10 @@
 #include <errno.h>
 #include <algorithm>
 
+#ifdef __EMSCRIPTEN__
+#include "audio.h"
+#endif
+
 #define DEF_SCREEN_W  (rgssVer == 1 ? 640 : 544)
 #define DEF_SCREEN_H  (rgssVer == 1 ? 480 : 416)
 #define DEF_FRAMERATE (rgssVer == 1 ?  40 :  60)
@@ -658,6 +662,10 @@ void Graphics::update()
 	p->checkShutDownReset();
 	p->checkSyncLock();
 
+#ifdef __EMSCRIPTEN__
+	shState->audio().update();
+#endif
+
 	if (p->frozen)
 		return;
 
@@ -801,6 +809,10 @@ void Graphics::transition(int duration,
 		GLMeta::blitEnd();
 
 		p->swapGLBuffer();
+
+#ifdef __EMSCRIPTEN__
+		shState->audio().update();
+#endif
 	}
 
 	glState.blend.pop();

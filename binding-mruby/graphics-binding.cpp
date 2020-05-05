@@ -19,10 +19,6 @@
 ** along with mkxp.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef __EMSCRIPTEN__
-#include "audio.h"
-#endif
-
 #include "graphics.h"
 #include "sharedstate.h"
 #include "binding-util.h"
@@ -33,10 +29,6 @@ MRB_FUNCTION(graphicsUpdate)
 	MRB_FUN_UNUSED_PARAM;
 
 	shState->graphics().update();
-
-#ifdef __EMSCRIPTEN__
-	shState->audio().update();
-#endif
 
 	return mrb_nil_value();
 }
