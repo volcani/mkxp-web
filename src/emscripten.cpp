@@ -28,8 +28,10 @@ EM_JS(void, load_file_async_js, (const char* fullPathC), {
 		// Get target URL
 		const iurl = "gameasync/" + fullPath;
 
-		// Delete original file
-		FS.unlink(path + "/" + filename);
+		// Delete original file if existent
+		try {
+			FS.unlink(path + "/" + filename);
+		} catch (err) {}
 
 		// Get the new file
 		FS.createPreloadedFile(path, filename, iurl, true, true, function() {

@@ -2,7 +2,16 @@
 #include "file-helper.h"
 #include <SDL_rwops.h>
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.hpp"
+#endif
+
 char* SDL_rw_file_helper::read() {
+
+#ifdef __EMSCRIPTEN__
+	load_file_async_js(filename);
+#endif
+
         SDL_RWops *rw = SDL_RWFromFile(filename, "rb");
         if (rw == NULL) return NULL;
 

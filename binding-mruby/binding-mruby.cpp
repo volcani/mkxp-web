@@ -261,6 +261,22 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 		return;
 	}
 
+	/* Load Ruby Game Scripting System from rgss.rb */
+	try
+	{
+		SDL_rw_file_helper fileHelper;
+		fileHelper.filename = "rgss.rb";
+		char * contents = fileHelper.read();
+		int ai = mrb_gc_arena_save(mrb);
+		mrb_load_nstring_cxt(mrb, contents, fileHelper.length, ctx);
+		mrb_gc_arena_restore(mrb, ai);
+	}
+	catch (const Exception &e)
+	{
+		printf("Failed to read rgss.rb\n");
+		return;
+	}
+
 	/* We use a secondary util state to unmarshal the scripts */
 	mrb_state *scriptMrb = mrb_open();
 
