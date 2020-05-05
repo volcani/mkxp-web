@@ -37,6 +37,10 @@
 #include "filesystem.h"
 #include "binding.h"
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.hpp"
+#endif
+
 void mrbBindingTerminate();
 
 MRB_FUNCTION(kernelLoadData)
@@ -82,10 +86,23 @@ MRB_FUNCTION(kernelSaveData)
 	return mrb_nil_value();
 }
 
+MRB_FUNCTION(kernelSaveAsync)
+{
+	mrb_value obj;
+	const char *filename;
+
+	mrb_get_args(mrb, "z", &filename);
+
+	save_file_async_js(filename);
+
+	return mrb_nil_value();
+}
+
 void kernelBindingInit(mrb_state *mrb)
 {
 	RClass *module = mrb->kernel_module;
 
 	mrb_define_module_function(mrb, module, "load_data", kernelLoadData, MRB_ARGS_REQ(1));
 	mrb_define_module_function(mrb, module, "save_data", kernelSaveData, MRB_ARGS_REQ(2));
+	mrb_define_module_function(mrb, module, "save_file_async", kernelSaveAsync, MRB_ARGS_REQ(1));
 }

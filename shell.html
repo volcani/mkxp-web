@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <script src="js/localforage.min.js"></script>
+
     <title>MKXP</title>
     <style>
     	body {
@@ -100,9 +102,41 @@
     </div>
 
     <script type='text/javascript'>
+      var namespace = 'kne';
+      window.saveFile = function(filename) {
+          const buf = FS.readFile('/game/' + filename);
+          const b64 = btoa(String.fromCharCode.apply(null, buf));
+          localforage.setItem(namespace + filename, b64);
+
+          localforage.getItem(namespace, function(err, res) {
+              if (err || !res) res = {};
+              res[filename] = 1;
+              localforage.setItem(namespace, res);
+          });
+      };
+
+      var loadFiles = function() {
+          localforage.getItem(namespace, function(err, res) {
+              if (err || !res) return;
+
+              const keys = Object.keys(res);
+
+              console.log('Locally stored savefiles', keys);
+
+              keys.forEach((key) => {
+                  localforage.getItem(namespace + key, (err, res) => {
+                      if (err) return;
+
+                      const buf = new Uint8Array(atob(res).split('').map((c) => c.charCodeAt(0)));
+                      FS.writeFile('/game/' + key, buf);
+                  });
+              });
+          });
+      }
+
       var Module = {
         preRun: [],
-        postRun: [],
+        postRun: [loadFiles],
         print: (function() {
           return function(text) {
             console.log(text);

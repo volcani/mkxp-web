@@ -59,5 +59,9 @@ void load_file_async(const char * filename) {
 	shState->fileSystem().openRead(handler, filename);
 }
 
+EM_JS(void, save_file_async_js, (const char* fullPathC), {
+	if (window.saveFile) window.saveFile(UTF8ToString(fullPathC));
+});
+
 #endif
 
