@@ -39,15 +39,6 @@
 
 void mrbBindingTerminate();
 
-MRB_FUNCTION(kernelEval)
-{
-	const char *exp;
-	mrb_int expLen;
-	mrb_get_args(mrb, "s", &exp, &expLen);
-
-	return mrb_load_nstring(mrb, exp, expLen);
-}
-
 MRB_FUNCTION(kernelLoadData)
 {
 	const char *filename;
@@ -95,7 +86,6 @@ void kernelBindingInit(mrb_state *mrb)
 {
 	RClass *module = mrb->kernel_module;
 
-	mrb_define_module_function(mrb, module, "eval", kernelEval, MRB_ARGS_REQ(1));
 	mrb_define_module_function(mrb, module, "load_data", kernelLoadData, MRB_ARGS_REQ(1));
 	mrb_define_module_function(mrb, module, "save_data", kernelSaveData, MRB_ARGS_REQ(2));
 }
