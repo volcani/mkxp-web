@@ -180,6 +180,7 @@ void Plane::setBitmap(Bitmap *value)
 		return;
 
 	value->ensureNonMega();
+	p->quadSourceDirty = true;
 }
 
 void Plane::setOX(int value)
