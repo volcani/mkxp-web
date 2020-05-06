@@ -159,6 +159,10 @@ int rgssThreadFun(void *userdata)
 	/* Start script execution */
 	scriptBinding->execute();
 
+#ifdef __EMSCRIPTEN
+	return 0;
+#endif
+
 	threadData->rqTermAck.set();
 	threadData->ethread->requestTerminate();
 

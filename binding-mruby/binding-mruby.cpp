@@ -52,6 +52,10 @@
 
 #include <stdio.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 static void mrbBindingExecute();
 static void mrbBindingTerminate();
 static void mrbBindingReset();
@@ -244,6 +248,57 @@ runMrbFile(mrb_state *mrb, const char *filename)
 	fclose(f);
 }
 
+mrb_state * static_mrb;
+
+#ifdef __EMSCRIPTEN__
+EM_JS(int, jsSkipFrame, (), {
+	// Initialize
+	const targetRate = window.skfTargetFrameRate || 40;
+	if (!window.skfFrameTimings) {
+		window.skfFrameTimings = [];
+		window.skfPreviousRate = targetRate;
+	}
+
+	// Get current time
+	const ctime = performance.now();
+
+	// Wait till we have n elements
+	if (window.skfFrameTimings.length < (window.skfNumFrames || 8)) {
+		window.skfFrameTimings.push(ctime);
+		return 0;
+	}
+
+	// Get average framerate
+	const framerate = 1000 / ((ctime - window.skfFrameTimings[0]) / window.skfFrameTimings.length);
+
+	// Proportional error
+	const Pe = framerate - targetRate;
+
+	// Derivative error
+	const De = (window.skfPreviousRate - framerate);
+
+	// Set previous rate
+	window.skfPreviousRate = framerate;
+
+	// Drop frame if necessary
+	if (Pe - De - 1 > 0) {
+		return 1;
+	}
+
+	// Add the timing
+	window.skfFrameTimings.shift();
+	window.skfFrameTimings.push(ctime);
+	return 0;
+});
+#endif
+
+void main_update_loop() {
+#ifdef __EMSCRIPTEN__
+	if (jsSkipFrame() == 1) return;
+#endif
+	mrb_load_nstring_cxt(static_mrb, "main_update_loop", 16, NULL);
+}
+
 static void
 runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 {
@@ -367,6 +422,11 @@ runRMXPScripts(mrb_state *mrb, mrbc_context *ctx)
 			return;
 		}
 	}
+
+#ifdef __EMSCRIPTEN__
+	static_mrb = mrb;
+	emscripten_set_main_loop(main_update_loop, 0, true);
+#endif
 
 	mrb_close(scriptMrb);
 }
