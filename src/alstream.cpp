@@ -244,7 +244,9 @@ struct ALStreamOpenHandler : FileSystem::OpenHandler
 				}
 			}
 
+#ifndef __EMSCRIPTEN__
 			source = createSDLSource(*srcOps, ext, STREAM_BUF_SIZE, looped);
+#endif
 		}
 		catch (const Exception &e)
 		{

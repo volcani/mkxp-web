@@ -40,6 +40,11 @@ struct ALDataSource
 	 * to provided AL buffer */
 	virtual Status fillBuffer(AL::Buffer::ID alBuffer) = 0;
 
+	/* Read everything into the provided buffer */
+	virtual int fillBufferFull(AL::Buffer::ID alBuffer) {
+		return 0;
+	};
+
 	virtual int sampleRate() = 0;
 
 	/* If the source doesn't support seeking, it will
@@ -53,10 +58,12 @@ struct ALDataSource
 	virtual bool setPitch(float value) = 0;
 };
 
+#ifndef __EMSCRIPTEN__
 ALDataSource *createSDLSource(SDL_RWops &ops,
                               const char *extension,
 			                  uint32_t maxBufSize,
 			                  bool looped);
+#endif
 
 ALDataSource *createVorbisSource(SDL_RWops &ops,
                                  bool looped);

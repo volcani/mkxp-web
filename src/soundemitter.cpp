@@ -28,10 +28,11 @@
 #include "util.h"
 #include "debugwriter.h"
 
+#ifndef __EMSCRIPTEN__
 #include <SDL_sound.h>
-
-#ifdef __EMSCRIPTEN__
+#else
 #include "emscripten.hpp"
+#include "aldatasource.h"
 #endif
 
 #define SE_CACHE_MEM (10*1024*1024) // 10 MB
@@ -198,6 +199,11 @@ struct SoundOpenHandler : FileSystem::OpenHandler
 
 	bool tryRead(SDL_RWops &ops, const char *ext, const char *fullPath)
 	{
+#ifdef __EMSCRIPTEN__
+		ALDataSource *source = createVorbisSource(ops, false);
+		buffer = new SoundBuffer;
+		buffer->bytes = source->fillBufferFull(buffer->alBuffer);
+#else
 		Sound_Sample *sample = Sound_NewSample(&ops, ext, 0, STREAM_BUF_SIZE);
 
 		if (!sample)
@@ -221,7 +227,7 @@ struct SoundOpenHandler : FileSystem::OpenHandler
 							   buffer->bytes, sample->actual.rate);
 
 		Sound_FreeSample(sample);
-
+#endif
 		return true;
 	}
 };
@@ -253,8 +259,13 @@ SoundBuffer *SoundEmitter::allocateBuffer(const std::string &filename)
 		if (!buffer)
 		{
 			char buf[512];
+#ifdef __EMSCRIPTEN__
+			snprintf(buf, sizeof(buf), "Unable to decode with vorbisfile: %s",
+			         filename.c_str());
+#else
 			snprintf(buf, sizeof(buf), "Unable to decode sound: %s: %s",
 			         filename.c_str(), Sound_GetError());
+#endif
 			Debug() << buf;
 
 			return 0;

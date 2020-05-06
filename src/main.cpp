@@ -24,7 +24,10 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+
+#ifndef __EMSCRIPTEN__
 #include <SDL_sound.h>
+#endif
 
 #include <unistd.h>
 #include <string.h>
@@ -272,6 +275,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+#ifndef __EMSCRIPTEN__
 	if (Sound_Init() == 0)
 	{
 		showInitError(std::string("Error initializing SDL_sound: ") + Sound_GetError());
@@ -281,6 +285,7 @@ int main(int argc, char *argv[])
 
 		return 0;
 	}
+#endif
 
 	SDL_Window *win;
 	Uint32 winFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_INPUT_FOCUS;
@@ -385,7 +390,10 @@ int main(int argc, char *argv[])
 	alcCloseDevice(alcDev);
 	SDL_DestroyWindow(win);
 
+#ifndef __EMSCRIPTEN__
 	Sound_Quit();
+#endif
+
 	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();

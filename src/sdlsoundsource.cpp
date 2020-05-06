@@ -22,6 +22,8 @@
 #include "aldatasource.h"
 #include "exception.h"
 
+#ifndef __EMSCRIPTEN__
+
 #include <SDL_sound.h>
 
 struct SDLSoundSource : ALDataSource
@@ -129,3 +131,5 @@ ALDataSource *createSDLSource(SDL_RWops &ops,
 {
 	return new SDLSoundSource(ops, extension, maxBufSize, looped);
 }
+
+#endif

@@ -78,6 +78,9 @@ struct VorbisSource : ALDataSource
 
 	std::vector<int16_t> sampleBuf;
 
+	int bufUsed = 0;
+	bool readFull = false;
+
 	VorbisSource(SDL_RWops &ops,
 	             bool looped)
 	    : src(ops),
@@ -178,7 +181,7 @@ struct VorbisSource : ALDataSource
 	{
 		void *bufPtr = sampleBuf.data();
 		int availBuf = sampleBuf.size();
-		int bufUsed  = 0;
+		bufUsed  = 0;
 
 		int canRead = availBuf;
 
@@ -259,6 +262,12 @@ struct VorbisSource : ALDataSource
 			}
 
 			canRead -= res;
+
+			/* Double size if we want to read everything */
+			if (readFull && !(canRead > 16)) {
+				canRead += sampleBuf.size();
+				sampleBuf.resize(sampleBuf.size() * 2);
+			}
 		}
 
 		if (retStatus != ALDataSource::Error)
@@ -266,6 +275,13 @@ struct VorbisSource : ALDataSource
 			                       bufUsed*sizeof(int16_t), info.rate);
 
 		return retStatus;
+	}
+
+	int fillBufferFull(AL::Buffer::ID alBuffer) {
+		readFull = true;
+		fillBuffer(alBuffer);
+		readFull = false;
+		return bufUsed*sizeof(int16_t);
 	}
 
 	uint32_t loopStartFrames()

@@ -380,7 +380,6 @@ endif()
 
 link_directories(
 	../libsigc++-2.10.3/sigc++/.libs
-	../SDL_sound/.libs
 	../pixman-0.40.0/pixman/.libs
 	../physfs-3.0.2
 	../ruby
@@ -388,6 +387,7 @@ link_directories(
 	../mruby/build/x86_64-pc-linux-gnu/lib
 	libs
 
+	#../SDL_sound/.libs
 	${SDL2_LIBRARY_DIRS}
 )
 
@@ -406,11 +406,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	src
 	windows
 	../libsigc++-2.10.3
-	../SDL_sound
 	../pixman-0.40.0/pixman
 	../physfs-3.0.2/src
 	../mruby/include
-	#..
+
+
+	#../SDL_sound
 
 	${SDL2_INCLUDE_DIRS}
 	#${VORBISFILE_INCLUDE_DIRS}
@@ -421,11 +422,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME}
 	#ruby-static.a
 
-	sigc-2.0.a physfs.a SDL_sound.a pixman-1.a
+	sigc-2.0.a physfs.a pixman-1.a
 	#sigc-2.0.x86.a physfs.x86.a SDL_sound.x86.a pixman-1.x86.a
 
 	mruby.a
 
+	#SDL_sound.a
 	#ruby-static.x86.a
 	#crypt
 	#dl
