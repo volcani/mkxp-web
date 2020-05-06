@@ -233,6 +233,7 @@ struct ALStreamOpenHandler : FileSystem::OpenHandler
 				return true;
 			}
 
+#ifndef __EMSCRIPTEN__
 			if (!strcmp(sig, "MThd"))
 			{
 				shState->midiState().initIfNeeded(shState->config());
@@ -244,7 +245,6 @@ struct ALStreamOpenHandler : FileSystem::OpenHandler
 				}
 			}
 
-#ifndef __EMSCRIPTEN__
 			source = createSDLSource(*srcOps, ext, STREAM_BUF_SIZE, looped);
 #endif
 		}

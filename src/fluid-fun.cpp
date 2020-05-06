@@ -26,10 +26,6 @@ static void *so;
 
 void initFluidFunctions()
 {
-#ifdef __EMSCRIPTEN__
-	goto fail;
-#endif
-
 #ifdef SHARED_FLUID
 
 #define FLUID_FUN(name, type) \
