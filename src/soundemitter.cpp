@@ -203,6 +203,7 @@ struct SoundOpenHandler : FileSystem::OpenHandler
 		ALDataSource *source = createVorbisSource(ops, false);
 		buffer = new SoundBuffer;
 		buffer->bytes = source->fillBufferFull(buffer->alBuffer);
+		delete source;
 #else
 		Sound_Sample *sample = Sound_NewSample(&ops, ext, 0, STREAM_BUF_SIZE);
 
