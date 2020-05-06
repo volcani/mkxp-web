@@ -37,6 +37,7 @@ EM_JS(void, load_file_async_js, (const char* fullPathC), {
 		FS.createPreloadedFile(path, filename, iurl, true, true, function() {
 			window.fileAsyncCache[fullPath] = 1;
 			if (window.setNotBusy) window.setNotBusy();
+			if (window.fileLoadedAsync) window.fileLoadedAsync(fullPath);
 			wakeUp();
 		}, console.error);
 	});

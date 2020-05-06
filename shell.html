@@ -172,6 +172,20 @@
       window.onerror = function() {
           alert("An error occured!")
       };
+
+      window.fileLoadedAsync = function(file) {
+          if (!(/.*Map.*rxdata/i.test(file))) return;
+
+          fetch('preload/' + file + '.json')
+              .then(function(response) {
+                  return response.json();
+              })
+              .then(function(jsonResponse) {
+                  jsonResponse.forEach((f) => {
+                      fetch('gameasync/' + f).then().catch();
+                  });
+              });
+      };
     </script>
 
     {{{ SCRIPT }}}
