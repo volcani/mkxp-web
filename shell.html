@@ -137,6 +137,7 @@
       var Module = {
         preRun: [],
         postRun: [loadFiles],
+        noAudioDecoding: true,
         print: (function() {
           return function(text) {
             console.log(text);
