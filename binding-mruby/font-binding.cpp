@@ -96,6 +96,9 @@ MRB_METHOD(FontGetName)
 
 MRB_METHOD(FontSetName)
 {
+	// TODO: Fix this implementation
+	// It should be able to handle both string and array sets
+#if 0
 	Font *f = getPrivateData<Font>(mrb, self);
 
 	mrb_value name;
@@ -108,6 +111,9 @@ MRB_METHOD(FontSetName)
 	mrb_iv_set(mrb, self, mrb_intern_cstr(mrb, "name"), name);
 
 	return name;
+#else
+	return mrb_nil_value();
+#endif
 }
 
 template<class C>
