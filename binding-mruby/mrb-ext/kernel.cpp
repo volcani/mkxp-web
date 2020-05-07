@@ -93,8 +93,10 @@ MRB_FUNCTION(kernelSaveAsync)
 
 	mrb_get_args(mrb, "z", &filename);
 
+#ifdef __EMSCRIPTEN__
 	save_file_async_js(filename);
 
+#endif
 	return mrb_nil_value();
 }
 
