@@ -250,7 +250,7 @@ SoundBuffer *SoundEmitter::allocateBuffer(const std::string &filename)
 	{
 		/* Buffer not in cache, needs to be loaded */
 #ifdef __EMSCRIPTEN__
-		load_file_async(filename.c_str());
+		load_file_async_js(filename.c_str());
 #endif
 
 		SoundOpenHandler handler;

@@ -1,6 +1,4 @@
 #include "emscripten.hpp"
-#include "filesystem.h"
-#include "sharedstate.h"
 
 #ifdef __EMSCRIPTEN__
 
@@ -18,15 +16,22 @@ EM_JS(void, load_file_async_js, (const char* fullPathC), {
 		// Show spinner
 		if (window.setBusy) window.setBusy();
 
-		// Get full destination
-		const file = "game/" + fullPath;
+		// Get mapping key
+		const mappingKey = fullPath.toLowerCase().replace(new RegExp("\\\\.[^/.]+$"), "");
+		const mappingValue = mapping[mappingKey];
 
-		// Get path and filename
-		const path = "/" + file.substring(0, file.lastIndexOf("/"));
-		const filename = file.substring(file.lastIndexOf("/") + 1);
+		// Check if this is a folder
+		if (!mappingValue || mappingValue.endsWith("h=")) {
+			console.error("Skipping loading", fullPath, mappingValue);
+			return wakeUp();
+		}
 
 		// Get target URL
-		const iurl = "gameasync/" + fullPath;
+		const iurl = "gameasync/" + mappingValue;
+
+		// Get path and filename
+		const path = "/game/" + mappingValue.substring(0, mappingValue.lastIndexOf("/"));
+		const filename = mappingValue.substring(mappingValue.lastIndexOf("/") + 1).split("?")[0];
 
 		// Delete original file if existent
 		try {
@@ -42,23 +47,6 @@ EM_JS(void, load_file_async_js, (const char* fullPathC), {
 		}, console.error);
 	});
 });
-
-struct LoadOpenHandler : FileSystem::OpenHandler
-{
-	LoadOpenHandler()
-	{}
-
-	bool tryRead(SDL_RWops &ops, const char *ext, const char *fullPath)
-	{
-		load_file_async_js(fullPath);
-		return true;
-	}
-};
-
-void load_file_async(const char * filename) {
-	LoadOpenHandler handler;
-	shState->fileSystem().openRead(handler, filename);
-}
 
 EM_JS(void, save_file_async_js, (const char* fullPathC), {
 	if (window.saveFile) window.saveFile(UTF8ToString(fullPathC));

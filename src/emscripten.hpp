@@ -7,8 +7,6 @@
 extern "C" {
 	void load_file_async_js(const char* fullPathC);
 
-	void load_file_async(const char* filename);
-
 	void save_file_async_js(const char* fullPathC);
 }
 

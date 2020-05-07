@@ -263,7 +263,7 @@ struct ALStreamOpenHandler : FileSystem::OpenHandler
 void ALStream::openSource(const std::string &filename)
 {
 #ifdef __EMSCRIPTEN__
-	load_file_async(filename.c_str());
+	load_file_async_js(filename.c_str());
 #endif
 
 	ALStreamOpenHandler handler(srcOps, looped);

@@ -248,7 +248,6 @@ struct BitmapOpenHandler : FileSystem::OpenHandler
 	bool tryRead(SDL_RWops &ops, const char *ext, const char * fullPath)
 	{
 #ifdef __EMSCRIPTEN__
-		load_file_async_js(fullPath);
 		surf = IMG_Load(fullPath);
 #else
 		surf = IMG_LoadTyped_RW(&ops, 1, ext);
@@ -259,6 +258,10 @@ struct BitmapOpenHandler : FileSystem::OpenHandler
 
 Bitmap::Bitmap(const char *filename)
 {
+#ifdef __EMSCRIPTEN__
+	load_file_async_js(filename);
+#endif
+
 	BitmapOpenHandler handler;
 	shState->fileSystem().openRead(handler, filename);
 	SDL_Surface *imgSurf = handler.surf;
