@@ -203,7 +203,10 @@
               })
               .then(function(jsonResponse) {
                   jsonResponse.forEach((f) => {
-                      fetch('gameasync/' + f).then().catch();
+                      const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
+                      if (!url) return;
+
+                      fetch('gameasync/' + url).then().catch();
                   });
               });
       };
