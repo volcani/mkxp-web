@@ -7,11 +7,11 @@ do
 filename="${file%.*}"
 echo "MIDI $filename"
 
-timidity $file -o $filename.ogg -Ov
-rm $file
+timidity "$file" -o "$filename.ogg" -Ov
+rm "$file"
 
-ffmpeg -i $filename.ogg -c:a libvorbis -qscale:a 0 CONV/$filename.ogg
-rm $filename.ogg
+ffmpeg -i "$filename.ogg" -c:a libvorbis -qscale:a 0 "CONV/$filename.ogg"
+rm "$filename.ogg"
 
 done
 
@@ -21,10 +21,10 @@ for file in Audio/**/*.ogg
 do
 
 filename="${file%.*}"
-echo $filename
+echo "$filename"
 
-ffmpeg -i $file -c:a libvorbis -qscale:a 0 CONV/$filename.ogg
-rm $file
+ffmpeg -i "$file" -c:a libvorbis -qscale:a 0 "CONV/$filename.ogg"
+rm "$file"
 
 done
 
@@ -33,10 +33,10 @@ for file in Audio/**/*.wav
 do
 
 filename="${file%.*}"
-echo $filename
+echo "$filename"
 
-ffmpeg -i $file -c:a libvorbis -qscale:a 0 CONV/$filename.ogg
-rm $file
+ffmpeg -i "$file" -c:a libvorbis -qscale:a 0 "CONV/$filename.ogg"
+rm "$file"
 
 done
 
