@@ -217,13 +217,10 @@
                       const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
                       if (!url) return;
 
-                      // Get filename
-                      let filename = url.split('?')[0];
-                      filename = filename.split('/');
-                      filename = filename[filename.length -1];
-
-                      // Preload asset
-                      getLazyAsset('gameasync/' + url, filename, () => {});
+                      // Preload the asset
+                      setTimeout(() => {
+                          fetch('gameasync/' + url).then().catch();
+                      }, 1000);
                   });
               });
       };
@@ -238,7 +235,6 @@
               if (xhr.readyState == XMLHttpRequest.DONE) {
                   pdiv.innerHTML = `${filename} - done`;
                   hideTimer = setTimeout(() => {
-                      window.setNotBusy();
                       pdiv.style.opacity = '0';
                       hideTimer = 0;
                   }, 500);
@@ -255,9 +251,10 @@
           xhr.open('GET', url);
           xhr.send();
 
+          pdiv.innerHTML = `${filename} - starting`;
+
           showTimer = setTimeout(() => {
               pdiv.style.opacity = '0.5';
-              window.setBusy();
           }, 100);
 
           if (hideTimer) {
@@ -267,6 +264,17 @@
       }
     </script>
 
-    {{{ SCRIPT }}}
+    <script>
+      // Load wasm then initialize
+      setTimeout(() => {
+          getLazyAsset('mkxp.wasm', 'Game engine', () => {
+              const s = document.createElement('script');
+              s.setAttribute('src', 'mkxp.js');
+              document.body.appendChild(s);
+          });
+      }, 500);
+    </script>
+
+    <!-- {{{ SCRIPT }}} -->
   </body>
 </html>
