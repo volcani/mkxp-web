@@ -13,9 +13,6 @@ EM_JS(void, load_file_async_js, (const char* fullPathC), {
 		// Check if already loaded
 		if (window.fileAsyncCache.hasOwnProperty(fullPath)) return wakeUp();
 
-		// Show spinner
-		if (window.setBusy) window.setBusy();
-
 		// Get mapping key
 		const mappingKey = fullPath.toLowerCase().replace(new RegExp("\\\\.[^/.]+$"), "");
 		const mappingValue = mapping[mappingKey];
@@ -39,12 +36,13 @@ EM_JS(void, load_file_async_js, (const char* fullPathC), {
 		} catch (err) {}
 
 		// Get the new file
-		FS.createPreloadedFile(path, filename, iurl, true, true, function() {
-			window.fileAsyncCache[fullPath] = 1;
-			if (window.setNotBusy) window.setNotBusy();
-			if (window.fileLoadedAsync) window.fileLoadedAsync(fullPath);
-			wakeUp();
-		}, console.error);
+		getLazyAsset(iurl, filename, () => {
+			FS.createPreloadedFile(path, filename, iurl, true, true, function() {
+				window.fileAsyncCache[fullPath] = 1;
+				if (window.fileLoadedAsync) window.fileLoadedAsync(fullPath);
+				wakeUp();
+			}, console.error);
+		});
 	});
 });
 
