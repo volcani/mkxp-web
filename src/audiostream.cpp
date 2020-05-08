@@ -271,6 +271,12 @@ void AudioStream::updateVolume()
 
 void AudioStream::finiFadeOutInt()
 {
+#ifdef __EMSCRIPTEN__
+	fade.active.clear();
+	fadeIn.thread = 0;
+	return;
+#endif
+
 	if (fade.thread)
 	{
 		fade.reqFini.set();
