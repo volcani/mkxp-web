@@ -198,7 +198,7 @@ void Config::read(int argc, char *argv[])
 	defScreenH = 480;
 	enableBlitting = false;
 	winResizable = false;
-	windowTitle = "KN_E";
+	windowTitle = "MKXP";
 	frameSkip = false;
 
 #undef PO_DESC
