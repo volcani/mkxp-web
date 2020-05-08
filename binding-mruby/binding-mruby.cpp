@@ -219,6 +219,7 @@ runCustomScript(mrb_state *mrb, mrbc_context *ctx, const char *filename)
 static void
 runMrbFile(mrb_state *mrb, const char *filename)
 {
+#if 0
 	/* Execute compiled script */
 	FILE *f = fopen(filename, "rb");
 
@@ -246,6 +247,7 @@ runMrbFile(mrb_state *mrb, const char *filename)
 	mrb_run(mrb, proc, mrb_top_self(mrb));
 
 	fclose(f);
+#endif
 }
 
 mrb_state * static_mrb;
