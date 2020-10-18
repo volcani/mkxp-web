@@ -5,8 +5,8 @@ mkxp is a project that seeks to provide a fully open source implementation of th
 It is licensed under the GNU General Public License v2+.
 
 ## Prebuilt binaries
-[**Linux (32bit/64bit)**](http://ancurio.bplaced.net/mkxp/generic/)  
-[**OSX**](https://app.box.com/mkxpmacbuilds) by Ali  
+[**Linux (32bit/64bit)**](http://ancurio.bplaced.net/mkxp/generic/)
+[**OSX**](https://app.box.com/mkxpmacbuilds) by Ali
 [**Windows (mingw-w64 32bit)**](http://ancurio.bplaced.net/mkxp/mingw32/)
 
 ## Should I use mkxp
@@ -126,3 +126,145 @@ To alleviate possible porting of heavily Win32API reliant scripts, I have added 
 * The `Input.press?` family of functions accepts three additional button constants: `::MOUSELEFT`, `::MOUSEMIDDLE` and `::MOUSERIGHT` for the respective mouse buttons.
 * The `Input` module has two additional functions, `#mouse_x` and `#mouse_y` to query the mouse pointer position relative to the game screen.
 * The `Graphics` module has two additional properties: `fullscreen` represents the current fullscreen mode (`true` = fullscreen, `false` = windowed), `show_cursor` hides the system cursor inside the game window when `false`.
+
+## Porting games to work with mruby+wasm
+
+You can view a full example of a Scripts.rxdata diff for the Knight Blade sample game [here](extra/Scripts.rb.diff) (generated using [this](https://gist.github.com/pulsejet/6cb547db7222a65b32f34499c7266c36))
+
+mruby has mutliple differences with MRI, and so games may not work as expected when porting to the web. The `extra/vm.c.patch` takes care of differing behavior during integer division, but you will need to make at least the following changes in your `Scripts.rxdata` for the game to work correctly and with acceptable performance. The following assumes a "standard" `Scripts.rxdata` to begin with; you will have to adapt similarly for your game.
+
+### Event Loop
+
+> **NOTE**: You may skip this step at the cost of performance and an uncontrolled framerate.
+
+The event loop must be moved to the browser control. Add the following function globally in the last `Main` section. This function will be called by the browser for each animation frame.
+```ruby
+$prev_scene = nil
+def main_update_loop
+  if $scene != nil
+    if $scene != $prev_scene
+      if $prev_scene != nil
+	      $prev_scene.dispose
+      end
+      $scene.main
+      $prev_scene = $scene
+    end
+    # Update game screen
+    Graphics.update
+    # Update input information
+    Input.update
+    # Frame update
+    $scene.update
+  else
+    raise "END"
+  end
+end
+```
+
+and **remove** the infinte loop so that control exits to the browser
+```ruby
+  while $scene != nil
+    $scene.main
+  end
+```
+
+For each "Scene", end the `main` initializer after the `Graphics.transition` call and add a dispose method to clean up. Remove the infinite loop. In effect, this amounts to replacing
+```ruby
+    loop do
+      Graphics.update
+      Input.update
+      update
+      if $scene != self
+        break
+      end
+    end
+```
+with
+```ruby
+  end
+
+  def dispose
+```
+
+Your final "Scene" script in RXMP might look like
+```ruby
+class Scene_Menu
+    ...
+    def main
+        ...
+        Graphics.transition
+    end
+
+    def dispose
+        Graphics.freeze
+        ...
+    end
+
+    def update
+        ...
+    end
+end
+```
+
+### Save Games
+Save games are stored in IndexedDB using [localForage](https://github.com/localForage/localForage); you may expand on this to use a custom or cloud storage.
+
+The title screen must not check if save files exist, as they may be loaded asynchronously. Just remove the check of file existence and always keep the Continue button enabled in `Scene_Title`.
+
+Save files must be persisted to IndexedDB. To do this, call `save_file_async(filename)` after changing a save file. Also dump an extra `1` to the save file to work around some buggy Marshal behavior.
+
+In standard RMXP scripts,
+```ruby
+class Scene_Save < Scene_File
+    ...
+
+    def on_decision(filename)
+        ...
+
+        file = File.open(filename, "wb")
+        write_save_data(file)
+        file.close
+
+        save_file_async(filename)
+
+        ...
+    end
+
+    def write_save_data(file)
+        ...
+        Marshal.dump(characters, file)
+        ...
+        Marshal.dump($game_player, file)
+        ...
+        Marshal.dump(1, file)
+    end
+end
+```
+
+### begin ... end until
+
+This construct does not exist in mruby. The standard RXMP scripts use it in `Scene_Battle_3`. Remove all usages of this construct by replacing
+```ruby
+begin
+    ...
+end until condition
+```
+
+with
+```ruby
+loop do
+    ...
+    break if condition
+end
+```
+
+### Audio and Graphics formats
+
+Only OGG audio and PNG/JPEG images are supported. You can use `extra/convert_audio.sh` as a reference to quickly convert MIDI and WAV files to OGG (other formats such as MP3 can be handled similarly).
+
+### Other Notes
+* Refer to the `GAME_PROCESSING` section in `build.sh`. A folder named `gameasync` must contain all game files, which must be post processed.
+* A file mapping must be generated for the filesystem to work properly, generated with `extra/make_mapping.sh`
+* The same section also generates preload files for RMXP games. These files are used to preload assets when a map is loaded, and are generated by extracting all strings that refer to existing files from every map. Preload files are optional.
+* Change the `namespace` variable in `index.html` if you are running multiple games on the same site. This variable is used to identify the game for save files in IndexedDB.
+* Add a `.nojekyll` file to root directory if you are deploying to GitHub pages.

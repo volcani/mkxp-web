@@ -119,7 +119,7 @@ mkdir -p build
 cp -R mkxp.html mkxp.wasm mkxp.js extra/js build/
 
 # ==========================
-# Get and process gamme
+# GAME_PROCESSING
 # ==========================
 cd build
 
