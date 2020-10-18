@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install build deps
+      run: sudo apt-get install mm-common libtool rake ruby
+
     - uses: actions/checkout@v2
     - name: Build
       run: ./build.sh
