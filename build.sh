@@ -164,6 +164,7 @@ fi
 
 # Make deployable
 mv mkxp.html index.html
+touch .nojekyll
 
 # Done
 echo "Finished everything"
