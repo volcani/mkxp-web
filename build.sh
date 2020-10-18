@@ -3,6 +3,9 @@
 # Install OS deps
 # sudo apt install mm-common libtool rake ruby
 
+# Fail immediately
+set -e
+
 # Set optimization level
 export CFLAGS="-O3 -g0"
 export CXXFLAGS="-O3 -g0"
