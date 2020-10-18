@@ -7,7 +7,13 @@ do
 
 filename="${file%.*}"
 fl="$(echo "$filename" | tr '[:upper:]' '[:lower:]')"
-md5=`md5sum "${file}" | awk '{ print $1 }'`
+
+if [ -f $file ]
+then
+    md5=`md5sum "${file}" | awk '{ print $1 }'`
+else
+    md5=''
+fi
 
 echo "\"$fl\": \"${file}?h=${md5}\"," >> mapping.js
 

@@ -1,0 +1,19 @@
+--- src/vm.c	2020-10-18 23:00:12.865875587 +0530
++++ src/vm.c	2020-10-18 23:06:10.887618558 +0530
+@@ -2262,13 +2262,15 @@
+       switch (TYPES2(mrb_type(regs[a]),mrb_type(regs[a+1]))) {
+       case TYPES2(MRB_TT_FIXNUM,MRB_TT_FIXNUM):
+ #ifdef MRB_WITHOUT_FLOAT
++#else
+         {
+           mrb_int x = mrb_fixnum(regs[a]);
+           mrb_int y = mrb_fixnum(regs[a+1]);
+           SET_INT_VALUE(regs[a], y ? x / y : 0);
+         }
++        NEXT;
+         break;
+-#else
++
+         x = (mrb_float)mrb_fixnum(regs[a]);
+         y = (mrb_float)mrb_fixnum(regs[a+1]);
+         break;

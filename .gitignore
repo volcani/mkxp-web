@@ -4,13 +4,23 @@
 *.vert.xxd
 *.frag.xxd
 *.ttf.xxd
+*.png.xxd
+*.h.xxd
 
 Makefile
 
 mkxp
+mkxp.wasm
+mkxp.html
+mkxp.js
 xxd+
 
 /build
+/deps
+/CMakeFiles
+
+CMakeCache.txt
+cmake_install.cmake
 
 # Codeblocks
 mkxp.layout

@@ -379,15 +379,11 @@ if(APPLE)
 endif()
 
 link_directories(
-	../libsigc++-2.10.3/sigc++/.libs
-	../pixman-0.40.0/pixman/.libs
-	../physfs-3.0.2
-	../ruby
-	#../mruby/build/host/lib
-	../mruby/build/x86_64-pc-linux-gnu/lib
-	libs
+	deps/libsigc++/sigc++/.libs
+	deps/pixman/pixman/.libs
+	deps/physfs
+	deps/mruby/build/wasm32-unknown-gnu/lib
 
-	#../SDL_sound/.libs
 	${SDL2_LIBRARY_DIRS}
 )
 
@@ -405,34 +401,18 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PRIVATE
 	src
 	windows
-	../libsigc++-2.10.3
-	../pixman-0.40.0/pixman
-	../physfs-3.0.2/src
-	../mruby/include
-
-
-	#../SDL_sound
+	deps/libsigc++
+	deps/pixman/pixman
+	deps/physfs/src
+	deps/mruby/include	
 
 	${SDL2_INCLUDE_DIRS}
-	#${VORBISFILE_INCLUDE_DIRS}
 	${FLUID_INCLUDE_DIRS}
 	${OPENAL_INCLUDE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	#ruby-static.a
-
-	sigc-2.0.a physfs.a pixman-1.a
-	#sigc-2.0.x86.a physfs.x86.a SDL_sound.x86.a pixman-1.x86.a
-
-	mruby.a
-
-	#SDL_sound.a
-	#ruby-static.x86.a
-	#crypt
-	#dl
-	#pthread
-	#rt
+	sigc-2.0.a physfs.a pixman-1.a mruby.a
 
 	${SDL2_LIBRARIES}
 	${SDL2_IMAGE_LIBRARIES}
@@ -462,7 +442,6 @@ set_target_properties(
     PROPERTIES 
         OUTPUT_NAME "mkxp"
         SUFFIX ".html"
-#        SUFFIX ".out"
 )
 
 PostBuildMacBundle(${PROJECT_NAME} "" "${PLATFORM_COPY_LIBS}")
