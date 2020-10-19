@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="manifest" href="manifest.webmanifest">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
     <script src="js/localforage.min.js"></script>
+    <script src="js/drive.js"></script>
     <script src="gameasync/mapping.js"></script>
 
     <title>MKXP</title>
@@ -176,7 +178,7 @@
 
       window.saveFile = function(filename) {
           const buf = FS.readFile('/game/' + filename);
-          const b64 = btoa(String.fromCharCode.apply(null, buf));
+          const b64 = _bytesToBase64(buf);
           localforage.setItem(namespace + filename, b64);
 
           localforage.getItem(namespace, function(err, res) {
@@ -198,7 +200,7 @@
                   localforage.getItem(namespace + key, (err, res) => {
                       if (err) return;
 
-                      const buf = new Uint8Array(atob(res).split('').map((c) => c.charCodeAt(0)));
+                      const buf = _base64ToBytes(res);
                       FS.writeFile('/game/' + key, buf);
                   });
               });
