@@ -280,15 +280,15 @@
                     return response.json();
                 })
                 .then(function(jsonResponse) {
-                    jsonResponse.forEach((f) => {
-                        const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
-                        if (!url) return;
+                    setTimeout(() => {
+                        jsonResponse.forEach((f) => {
+                            const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
+                            if (!url) return;
 
-                        // Preload the asset
-                        setTimeout(() => {
-                            fetch('gameasync/' + url).then().catch();
-                        }, 1000);
-                    });
+                            // Preload the asset
+                                fetch('gameasync/' + url).then().catch();
+                        });
+                    }, 200);
                 });
         };
 
