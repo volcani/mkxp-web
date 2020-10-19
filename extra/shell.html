@@ -270,6 +270,16 @@
             console.error("An error occured!")
         };
 
+        function preloadList(jsonArray) {
+            jsonArray.forEach((f) => {
+                const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
+                if (!url) return;
+
+                // Preload the asset
+                fetch('gameasync/' + url).then().catch();
+            });
+        }
+
         window.fileLoadedAsync = function(file) {
             document.title = wTitle;
 
@@ -281,13 +291,7 @@
                 })
                 .then(function(jsonResponse) {
                     setTimeout(() => {
-                        jsonResponse.forEach((f) => {
-                            const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
-                            if (!url) return;
-
-                            // Preload the asset
-                                fetch('gameasync/' + url).then().catch();
-                        });
+                        preloadList(jsonResponse);
                     }, 200);
                 });
         };
@@ -343,9 +347,27 @@
         }
 
         document.title = wTitle;
-    </script>
 
-    <script>
+        // Load important files
+        preloadList([
+            'rgss.rb',
+            'data/scripts',
+            'data/actors',
+            'data/classes',
+            'data/skills',
+            'data/items',
+            'data/weapons',
+            'data/armors',
+            'data/enemies',
+            'data/troops',
+            'data/states',
+            'data/animations',
+            'data/tilesets',
+            'data/commonevents',
+            'data/system',
+            'data/mapinfos',
+        ]);
+
         // Load wasm then initialize
         setTimeout(() => {
             getLazyAsset('mkxp.wasm', 'Game engine', () => {
@@ -353,108 +375,107 @@
                 s.setAttribute('src', 'mkxp.js');
                 document.body.appendChild(s);
             });
-        }, 500);
+        }, 200);
 
-    function simulateKeyEvent(eventType, keyCode, charCode) {
-        var e = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
-        if (e.initEvent) e.initEvent(eventType, true, true);
+        function simulateKeyEvent(eventType, keyCode, charCode) {
+            var e = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
+            if (e.initEvent) e.initEvent(eventType, true, true);
 
-        e.keyCode = keyCode;
-        e.which = keyCode;
-        e.charCode = charCode;
+            e.keyCode = keyCode;
+            e.which = keyCode;
+            e.charCode = charCode;
 
-        // Dispatch directly to Emscripten's html5.h API (use this if page uses emscripten/html5.h event handling):
-        if (typeof JSEvents !== 'undefined' && JSEvents.eventHandlers && JSEvents.eventHandlers.length > 0) {
-            for(var i = 0; i < JSEvents.eventHandlers.length; ++i) {
-                if ((JSEvents.eventHandlers[i].target == Module['canvas'] || JSEvents.eventHandlers[i].target == window)
-                    && JSEvents.eventHandlers[i].eventTypeString == eventType) {
-                    JSEvents.eventHandlers[i].handlerFunc(e);
+            // Dispatch directly to Emscripten's html5.h API (use this if page uses emscripten/html5.h event handling):
+            if (typeof JSEvents !== 'undefined' && JSEvents.eventHandlers && JSEvents.eventHandlers.length > 0) {
+                for(var i = 0; i < JSEvents.eventHandlers.length; ++i) {
+                    if ((JSEvents.eventHandlers[i].target == Module['canvas'] || JSEvents.eventHandlers[i].target == window)
+                        && JSEvents.eventHandlers[i].eventTypeString == eventType) {
+                        JSEvents.eventHandlers[i].handlerFunc(e);
+                    }
                 }
+            } else {
+                // Dispatch to browser for real (use this if page uses SDL or something else for event handling):
+                Module['canvas'].dispatchEvent ? Module['canvas'].dispatchEvent(e) : Module['canvas'].fireEvent("on" + eventType, e);
             }
-        } else {
-            // Dispatch to browser for real (use this if page uses SDL or something else for event handling):
-            Module['canvas'].dispatchEvent ? Module['canvas'].dispatchEvent(e) : Module['canvas'].fireEvent("on" + eventType, e);
         }
-    }
 
-    // Mappings
-    const keyMap = {};
-    const keysDown = {};
+        // Mappings
+        const keyMap = {};
+        const keysDown = {};
 
-    /** Add virtual key binding */
-    function bindKey(elem, key) {
-        keyMap[elem] = key;
-        const ne = document.getElementById(elem);
+        /** Add virtual key binding */
+        function bindKey(elem, key) {
+            keyMap[elem] = key;
+            const ne = document.getElementById(elem);
 
-        ne.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            simulateKeyEvent('keydown', key);
-            keysDown[e.target.id] = elem;
-        });
-        ne.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            if (keysDown[e.target.id] && keyMap[keysDown[e.target.id]]) {
-                simulateKeyEvent('keyup', keyMap[keysDown[e.target.id]]);
-            }
-            keysDown[e.target.id] = 0;
-        });
-
-        ne.addEventListener('touchmove', function(event) {
-            const myLocation = event.changedTouches[0];
-            const realTarget = document.elementFromPoint(myLocation.clientX, myLocation.clientY).id;
-            const origTarget = keysDown[myLocation.target.id];
-
-            if (origTarget !== realTarget) {
-                if (origTarget) {
-                    simulateKeyEvent('keyup', keyMap[origTarget]);
-                    keysDown[myLocation.target.id] = 0;
+            ne.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyEvent('keydown', key);
+                keysDown[e.target.id] = elem;
+            });
+            ne.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                if (keysDown[e.target.id] && keyMap[keysDown[e.target.id]]) {
+                    simulateKeyEvent('keyup', keyMap[keysDown[e.target.id]]);
                 }
-                if (keyMap[realTarget]) {
-                    simulateKeyEvent('keydown', keyMap[realTarget]);
-                    keysDown[myLocation.target.id] = realTarget;
+                keysDown[e.target.id] = 0;
+            });
+
+            ne.addEventListener('touchmove', function(event) {
+                const myLocation = event.changedTouches[0];
+                const realTarget = document.elementFromPoint(myLocation.clientX, myLocation.clientY).id;
+                const origTarget = keysDown[myLocation.target.id];
+
+                if (origTarget !== realTarget) {
+                    if (origTarget) {
+                        simulateKeyEvent('keyup', keyMap[origTarget]);
+                        keysDown[myLocation.target.id] = 0;
+                    }
+                    if (keyMap[realTarget]) {
+                        simulateKeyEvent('keydown', keyMap[realTarget]);
+                        keysDown[myLocation.target.id] = realTarget;
+                    }
                 }
+            });
+        }
+
+        function is_touch_device() {
+            try {
+                document.createEvent("TouchEvent");
+                return true;
+            } catch (e) {
+                return false;
             }
-        });
-    }
-
-    function is_touch_device() {
-        try {
-            document.createEvent("TouchEvent");
-            return true;
-        } catch (e) {
-            return false;
         }
-    }
 
-    if (!is_touch_device()) {
-        document.getElementById('dpad').style.display = 'none';
-        document.getElementById('apad').style.display = 'none';
-    }
-
-    // Add all bindings
-    bindKey('d-up', 38);
-    bindKey('d-right', 39);
-    bindKey('d-down', 40);
-    bindKey('d-left', 37);
-    bindKey('ap-c', 67);
-    bindKey('ap-b', 88);
-    bindKey('ap-a', 90);
-    bindKey('ap-ka', 65);
-
-    const resize = function() {
-        const el = document.getElementById('canvas');
-        if (window.innerHeight > window.innerWidth) {
-            el.style.height = 'unset';
-            el.style.width = '100%';
-        } else {
-            el.style.width = 'unset';
-            el.style.height = '100%';
+        if (!is_touch_device()) {
+            document.getElementById('dpad').style.display = 'none';
+            document.getElementById('apad').style.display = 'none';
         }
-    }
 
-    window.addEventListener('resize', resize);
-    resize();
+        // Add all bindings
+        bindKey('d-up', 38);
+        bindKey('d-right', 39);
+        bindKey('d-down', 40);
+        bindKey('d-left', 37);
+        bindKey('ap-c', 67);
+        bindKey('ap-b', 88);
+        bindKey('ap-a', 90);
+        bindKey('ap-ka', 65);
 
+        const resize = function() {
+            const el = document.getElementById('canvas');
+            if (window.innerHeight > window.innerWidth) {
+                el.style.height = 'unset';
+                el.style.width = '100%';
+            } else {
+                el.style.width = 'unset';
+                el.style.height = '100%';
+            }
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
     </script>
 
     <!-- {{{ SCRIPT }}} -->
