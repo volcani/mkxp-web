@@ -7,7 +7,7 @@ MRuby::CrossBuild.new('wasm32-unknown-gnu') do |conf|
     toolchain :clang
   
     conf.gembox 'default'
-    conf.gem :github => 'take-cheeze/mruby-marshal'
+    conf.gem :github => 'pulsejet/mruby-marshal'
     conf.gem :github => 'monochromegane/mruby-time-strftime'
     conf.gem :core => 'mruby-eval'
     conf.cc.command = 'emcc'
