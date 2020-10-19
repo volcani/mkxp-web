@@ -8,6 +8,7 @@
     <script src="js/localforage.min.js"></script>
     <script src="js/drive.js"></script>
     <script src="gameasync/mapping.js"></script>
+    <script src="gameasync/bitmap-map.js"></script>
 
     <title>MKXP</title>
     <style>
@@ -74,8 +75,8 @@
 
         #fullscreen {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 10px;
+            right: 10px;
             opacity: 0.5;
             cursor: pointer;
         }
@@ -83,8 +84,8 @@
             opacity: 1;
         }
         #fullscreen > svg {
-            height: 25px;
-            width: 25px;
+            height: 20px;
+            width: 20px;
         }
 
         #progress {
@@ -129,11 +130,14 @@
         #d-right { transform: translateX(100%); }
         #ap-b { transform: translate(-130%, 90%); }
         #ap-c { transform: translate(-15%, -25%); }
-        #ap-a {
+        #ap-a, #ap-ka {
             height: 7vh; max-height: 7vw;
             width: 7vh; max-width: 7vw;
             top: 50%;
-            transform: translate(25%, 25%);
+            transform: translate(60%, -30%);
+        }
+        #ap-ka {
+            transform: translate(-20%, 70%);
         }
     </style>
   </head>
@@ -158,6 +162,7 @@
             <div id="ap-c"></div>
             <div id="ap-b"></div>
             <div id="ap-a"></div>
+            <div id="ap-ka"></div>
         </div>
     </div>
 
@@ -173,284 +178,304 @@
     </div>
 
     <script type='text/javascript'>
-      var namespace = 'kne';
-      var wTitle = 'KN_E'
+        var namespace = 'kne';
+        var wTitle = 'KN_E'
 
-      window.saveFile = function(filename) {
-          const buf = FS.readFile('/game/' + filename);
-          const b64 = _bytesToBase64(buf);
-          localforage.setItem(namespace + filename, b64);
+        window.saveFile = function(filename) {
+            const buf = FS.readFile('/game/' + filename);
+            const b64 = _bytesToBase64(buf);
+            localforage.setItem(namespace + filename, b64);
 
-          localforage.getItem(namespace, function(err, res) {
-              if (err || !res) res = {};
-              res[filename] = 1;
-              localforage.setItem(namespace, res);
-          });
-      };
+            localforage.getItem(namespace, function(err, res) {
+                if (err || !res) res = {};
+                res[filename] = 1;
+                localforage.setItem(namespace, res);
+            });
+        };
 
-      var loadFiles = function() {
-          localforage.getItem(namespace, function(err, res) {
-              if (err || !res) return;
+        var loadFiles = function() {
+            localforage.getItem(namespace, function(err, res) {
+                if (err || !res) return;
 
-              const keys = Object.keys(res);
+                const keys = Object.keys(res);
 
-              console.log('Locally stored savefiles', keys);
+                console.log('Locally stored savefiles', keys);
 
-              keys.forEach((key) => {
-                  localforage.getItem(namespace + key, (err, res) => {
-                      if (err) return;
+                keys.forEach((key) => {
+                    localforage.getItem(namespace + key, (err, res) => {
+                        if (err) return;
 
-                      const buf = _base64ToBytes(res);
-                      FS.writeFile('/game/' + key, buf);
-                  });
-              });
-          });
-      }
-
-      var createDummies = function() {
-          // Base directory
-          FS.mkdir('/game');
-
-          // Create dummy objects
-          Object.values(mapping).forEach((file) => {
-              // Get filename
-              const filename = '/game/' + file.split("?")[0];
-
-              // Check if folder
-              if (file.endsWith('h=')) {
-                  return FS.mkdir(filename);
-              }
-
-              // Create dummy file
-              FS.writeFile(filename, '1');
-          });
-      };
-
-      var Module = {
-        preRun: [createDummies],
-        postRun: [loadFiles],
-        noAudioDecoding: true,
-        print: (function() {
-          return function(text) {
-            console.log(text);
-          };
-        })(),
-        printErr: function(text) {
-          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-          console.error(text);
-        },
-        canvas: (function() {
-          var canvas = document.getElementById('canvas');
-          canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
-
-          return canvas;
-        })(),
-        setStatus: function(text) {
-
+                        const buf = _base64ToBytes(res);
+                        FS.writeFile('/game/' + key, buf);
+                    });
+                });
+            });
         }
-      };
 
-      window.setBusy = function() {
-          document.getElementById('spinner').style.opacity = "0.5";
-      };
+        var createDummies = function() {
+            // Base directory
+            FS.mkdir('/game');
 
-      window.setNotBusy = function() {
-          document.getElementById('spinner').style.opacity = "0";
-      };
+            // Create dummy objects
+            Object.values(mapping).forEach((file) => {
+                // Get filename
+                const filename = '/game/' + file.split("?")[0];
 
-      function fullscreen() {
+                // Check if folder
+                if (file.endsWith('h=')) {
+                    return FS.mkdir(filename);
+                }
+
+                // Create dummy file
+                FS.writeFile(filename, '1');
+            });
+        };
+
+        var Module = {
+            preRun: [createDummies],
+            postRun: [loadFiles],
+            noAudioDecoding: true,
+            print: (function() {
+                return function(text) {
+                    console.log(text);
+                };
+            })(),
+            printErr: function(text) {
+                if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+                console.error(text);
+            },
+            canvas: (function() {
+                var canvas = document.getElementById('canvas');
+                canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
+                return canvas;
+            })(),
+            setStatus: function(text) {}
+        };
+
+        window.setBusy = function() {
+            document.getElementById('spinner').style.opacity = "0.5";
+        };
+
+        window.setNotBusy = function() {
+            document.getElementById('spinner').style.opacity = "0";
+        };
+
+        function fullscreen() {
             document.getElementById('main').requestFullscreen();
             screen.orientation.lock("landscape")
-      }
+        }
 
-      window.onerror = function() {
-          console.error("An error occured!")
-      };
+        window.onerror = function() {
+            console.error("An error occured!")
+        };
 
-      window.fileLoadedAsync = function(file) {
-          document.title = wTitle;
+        function preloadList(jsonArray) {
+            jsonArray.forEach((f) => {
+                const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
+                if (!url) return;
 
-          if (!(/.*Map.*rxdata/i.test(file))) return;
+                // Preload the asset
+                fetch('gameasync/' + url).then().catch();
+            });
+        }
 
-          fetch('preload/' + file + '.json')
-              .then(function(response) {
-                  return response.json();
-              })
-              .then(function(jsonResponse) {
-                  jsonResponse.forEach((f) => {
-                      const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
-                      if (!url) return;
+        window.fileLoadedAsync = function(file) {
+            document.title = wTitle;
 
-                      // Preload the asset
-                      setTimeout(() => {
-                          fetch('gameasync/' + url).then().catch();
-                      }, 1000);
-                  });
-              });
-      };
+            if (!(/.*Map.*rxdata/i.test(file))) return;
 
-      var hideTimer = 0;
-      function getLazyAsset(url, filename, callback) {
-          const xhr = new XMLHttpRequest();
-          const pdiv = document.getElementById("progress");
-          let showTimer = 0;
-          let abortTimer = 0;
+            fetch('preload/' + file + '.json')
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(jsonResponse) {
+                    setTimeout(() => {
+                        preloadList(jsonResponse);
+                    }, 200);
+                });
+        };
 
-          const retry = () => {
-              xhr.abort();
-              getLazyAsset(url, filename, callback);
-          }
+        var hideTimer = 0;
+        function getLazyAsset(url, filename, callback) {
+            const xhr = new XMLHttpRequest();
+            xhr.responseType = "arraybuffer";
+            const pdiv = document.getElementById("progress");
+            let showTimer = 0;
+            let abortTimer = 0;
 
-          xhr.onreadystatechange = function() {
-              if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
-                  pdiv.innerHTML = `${filename} - done`;
-                  hideTimer = setTimeout(() => {
-                      pdiv.style.opacity = '0';
-                      hideTimer = 0;
-                  }, 500);
-                  callback();
+            const retry = () => {
+                xhr.abort();
+                getLazyAsset(url, filename, callback);
+            }
 
-                  clearTimeout(showTimer);
-                  clearTimeout(abortTimer);
-              }
-          }
-          xhr.onprogress = function (event) {
-              const loaded = Math.round(event.loaded / 1024);
-              const total = Math.round(event.total / 1024);
-              pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
-
-              clearTimeout(abortTimer);
-              abortTimer = setTimeout(retry, 3000);
-          };
-          xhr.open('GET', url);
-          xhr.send();
-
-          pdiv.innerHTML = `${filename} - starting`;
-
-          showTimer = setTimeout(() => {
-              pdiv.style.opacity = '0.5';
-          }, 100);
-
-          abortTimer = setTimeout(retry, 3000);
-
-          if (hideTimer) {
-              clearTimeout(hideTimer);
-              hideTimer = 0;
-          }
-      }
-
-      document.title = wTitle;
-    </script>
-
-    <script>
-      // Load wasm then initialize
-      setTimeout(() => {
-          getLazyAsset('mkxp.wasm', 'Game engine', () => {
-              const s = document.createElement('script');
-              s.setAttribute('src', 'mkxp.js');
-              document.body.appendChild(s);
-          });
-      }, 500);
-
-    function simulateKeyEvent(eventType, keyCode, charCode) {
-        var e = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
-        if (e.initEvent) e.initEvent(eventType, true, true);
-
-        e.keyCode = keyCode;
-        e.which = keyCode;
-        e.charCode = charCode;
-
-        // Dispatch directly to Emscripten's html5.h API (use this if page uses emscripten/html5.h event handling):
-        if (typeof JSEvents !== 'undefined' && JSEvents.eventHandlers && JSEvents.eventHandlers.length > 0) {
-            for(var i = 0; i < JSEvents.eventHandlers.length; ++i) {
-                if ((JSEvents.eventHandlers[i].target == Module['canvas'] || JSEvents.eventHandlers[i].target == window)
-                    && JSEvents.eventHandlers[i].eventTypeString == eventType) {
-                    JSEvents.eventHandlers[i].handlerFunc(e);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
+                    pdiv.innerHTML = `${filename} - done`;
+                    hideTimer = setTimeout(() => {
+                        pdiv.style.opacity = '0';
+                        hideTimer = 0;
+                    }, 500);
+                    clearTimeout(showTimer);
+                    clearTimeout(abortTimer);
+                    callback(xhr.response);
                 }
             }
-        } else {
-            // Dispatch to browser for real (use this if page uses SDL or something else for event handling):
-            Module['canvas'].dispatchEvent ? Module['canvas'].dispatchEvent(e) : Module['canvas'].fireEvent("on" + eventType, e);
-        }
-    }
+            xhr.onprogress = function (event) {
+                const loaded = Math.round(event.loaded / 1024);
+                const total = Math.round(event.total / 1024);
+                pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
 
-    // Mappings
-    const keyMap = {};
-    const keysDown = {};
+                clearTimeout(abortTimer);
+                abortTimer = setTimeout(retry, 3000);
+            };
+            xhr.open('GET', url);
+            xhr.send();
 
-    /** Add virtual key binding */
-    function bindKey(elem, key) {
-        keyMap[elem] = key;
-        const ne = document.getElementById(elem);
+            pdiv.innerHTML = `${filename} - starting`;
 
-        ne.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            simulateKeyEvent('keydown', key);
-            keysDown[e.target.id] = elem;
-        });
-        ne.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            if (keysDown[e.target.id] && keyMap[keysDown[e.target.id]]) {
-                simulateKeyEvent('keyup', keyMap[keysDown[e.target.id]]);
+            showTimer = setTimeout(() => {
+                pdiv.style.opacity = '0.5';
+            }, 100);
+
+            abortTimer = setTimeout(retry, 3000);
+
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = 0;
             }
-            keysDown[e.target.id] = 0;
-        });
+        }
 
-        ne.addEventListener('touchmove', function(event) {
-            const myLocation = event.changedTouches[0];
-            const realTarget = document.elementFromPoint(myLocation.clientX, myLocation.clientY).id;
-            const origTarget = keysDown[myLocation.target.id];
+        document.title = wTitle;
 
-            if (origTarget !== realTarget) {
-                if (origTarget) {
-                    simulateKeyEvent('keyup', keyMap[origTarget]);
-                    keysDown[myLocation.target.id] = 0;
+        // Load important files
+        preloadList([
+            'rgss.rb',
+            'data/scripts',
+            'data/actors',
+            'data/classes',
+            'data/skills',
+            'data/items',
+            'data/weapons',
+            'data/armors',
+            'data/enemies',
+            'data/troops',
+            'data/states',
+            'data/animations',
+            'data/tilesets',
+            'data/commonevents',
+            'data/system',
+            'data/mapinfos',
+        ]);
+
+        // Load wasm then initialize
+        setTimeout(() => {
+            getLazyAsset('mkxp.wasm', 'Game engine', () => {
+                const s = document.createElement('script');
+                s.setAttribute('src', 'mkxp.js');
+                document.body.appendChild(s);
+            });
+        }, 200);
+
+        function simulateKeyEvent(eventType, keyCode, charCode) {
+            var e = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
+            if (e.initEvent) e.initEvent(eventType, true, true);
+
+            e.keyCode = keyCode;
+            e.which = keyCode;
+            e.charCode = charCode;
+
+            // Dispatch directly to Emscripten's html5.h API (use this if page uses emscripten/html5.h event handling):
+            if (typeof JSEvents !== 'undefined' && JSEvents.eventHandlers && JSEvents.eventHandlers.length > 0) {
+                for(var i = 0; i < JSEvents.eventHandlers.length; ++i) {
+                    if ((JSEvents.eventHandlers[i].target == Module['canvas'] || JSEvents.eventHandlers[i].target == window)
+                        && JSEvents.eventHandlers[i].eventTypeString == eventType) {
+                        JSEvents.eventHandlers[i].handlerFunc(e);
+                    }
                 }
-                if (keyMap[realTarget]) {
-                    simulateKeyEvent('keydown', keyMap[realTarget]);
-                    keysDown[myLocation.target.id] = realTarget;
-                }
+            } else {
+                // Dispatch to browser for real (use this if page uses SDL or something else for event handling):
+                Module['canvas'].dispatchEvent ? Module['canvas'].dispatchEvent(e) : Module['canvas'].fireEvent("on" + eventType, e);
             }
-        });
-    }
-
-    function is_touch_device() {
-        try {
-            document.createEvent("TouchEvent");
-            return true;
-        } catch (e) {
-            return false;
         }
-    }
 
-    if (!is_touch_device()) {
-        document.getElementById('dpad').style.display = 'none';
-        document.getElementById('apad').style.display = 'none';
-    }
+        // Mappings
+        const keyMap = {};
+        const keysDown = {};
 
-    // Add all bindings
-    bindKey('d-up', 38);
-    bindKey('d-right', 39);
-    bindKey('d-down', 40);
-    bindKey('d-left', 37);
-    bindKey('ap-c', 67);
-    bindKey('ap-b', 88);
-    bindKey('ap-a', 90);
+        /** Add virtual key binding */
+        function bindKey(elem, key) {
+            keyMap[elem] = key;
+            const ne = document.getElementById(elem);
 
-    const resize = function() {
-        const el = document.getElementById('canvas');
-        if (window.innerHeight > window.innerWidth) {
-            el.style.height = 'unset';
-            el.style.width = '100%';
-        } else {
-            el.style.width = 'unset';
-            el.style.height = '100%';
+            ne.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                simulateKeyEvent('keydown', key);
+                keysDown[e.target.id] = elem;
+            });
+            ne.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                if (keysDown[e.target.id] && keyMap[keysDown[e.target.id]]) {
+                    simulateKeyEvent('keyup', keyMap[keysDown[e.target.id]]);
+                }
+                keysDown[e.target.id] = 0;
+            });
+
+            ne.addEventListener('touchmove', function(event) {
+                const myLocation = event.changedTouches[0];
+                const realTarget = document.elementFromPoint(myLocation.clientX, myLocation.clientY).id;
+                const origTarget = keysDown[myLocation.target.id];
+
+                if (origTarget !== realTarget) {
+                    if (origTarget) {
+                        simulateKeyEvent('keyup', keyMap[origTarget]);
+                        keysDown[myLocation.target.id] = 0;
+                    }
+                    if (keyMap[realTarget]) {
+                        simulateKeyEvent('keydown', keyMap[realTarget]);
+                        keysDown[myLocation.target.id] = realTarget;
+                    }
+                }
+            });
         }
-    }
 
-    window.addEventListener('resize', resize);
-    resize();
+        function is_touch_device() {
+            try {
+                document.createEvent("TouchEvent");
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
 
+        if (!is_touch_device()) {
+            document.getElementById('dpad').style.display = 'none';
+            document.getElementById('apad').style.display = 'none';
+        }
+
+        // Add all bindings
+        bindKey('d-up', 38);
+        bindKey('d-right', 39);
+        bindKey('d-down', 40);
+        bindKey('d-left', 37);
+        bindKey('ap-c', 67);
+        bindKey('ap-b', 88);
+        bindKey('ap-a', 90);
+        bindKey('ap-ka', 65);
+
+        const resize = function() {
+            const el = document.getElementById('canvas');
+            if (window.innerHeight > window.innerWidth) {
+                el.style.height = 'unset';
+                el.style.width = '100%';
+            } else {
+                el.style.width = 'unset';
+                el.style.height = '100%';
+            }
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
     </script>
 
     <!-- <script async type="text/javascript" src="mkxp.js"></script> -->
