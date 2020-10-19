@@ -75,8 +75,8 @@
 
         #fullscreen {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 10px;
+            right: 10px;
             opacity: 0.5;
             cursor: pointer;
         }
@@ -84,8 +84,8 @@
             opacity: 1;
         }
         #fullscreen > svg {
-            height: 25px;
-            width: 25px;
+            height: 20px;
+            width: 20px;
         }
 
         #progress {
@@ -130,11 +130,14 @@
         #d-right { transform: translateX(100%); }
         #ap-b { transform: translate(-130%, 90%); }
         #ap-c { transform: translate(-15%, -25%); }
-        #ap-a {
+        #ap-a, #ap-ka {
             height: 7vh; max-height: 7vw;
             width: 7vh; max-width: 7vw;
             top: 50%;
-            transform: translate(25%, 25%);
+            transform: translate(60%, -30%);
+        }
+        #ap-ka {
+            transform: translate(-20%, 70%);
         }
     </style>
   </head>
@@ -159,6 +162,7 @@
             <div id="ap-c"></div>
             <div id="ap-b"></div>
             <div id="ap-a"></div>
+            <div id="ap-ka"></div>
         </div>
     </div>
 
@@ -437,6 +441,7 @@
     bindKey('ap-c', 67);
     bindKey('ap-b', 88);
     bindKey('ap-a', 90);
+    bindKey('ap-ka', 65);
 
     const resize = function() {
         const el = document.getElementById('canvas');
