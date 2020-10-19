@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Install build deps
-      run: sudo apt-get install mm-common libtool rake ruby
+      run: sudo apt-get install mm-common libtool rake ruby imagemagick
 
     - uses: actions/checkout@v2
     - name: Build
