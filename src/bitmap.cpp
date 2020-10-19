@@ -422,6 +422,13 @@ void Bitmap::stretchBlt(const IntRect &destRect,
 	if (opacity == 0)
 		return;
 
+#if __EMSCRIPTEN__
+	if (strlen(source.filename) > 0 && !file_is_cached(source.filename)) {
+		load_file_async_js(source.filename);
+		((Bitmap*)(&source))->loadFromFilename();
+	}
+#endif
+
 	SDL_Surface *srcSurf = source.megaSurface();
 
 	if (srcSurf && shState->config().subImageFix)

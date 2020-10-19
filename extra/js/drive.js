@@ -55,24 +55,20 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
     // Main loading function
     const load = (cb1) => {
         getLazyAsset(iurl, filename, (data) => {
-            // Delete original file if existent
-            try { FS.unlink(path + "/" + filename); } catch (err) {}
-
             FS.createPreloadedFile(path, filename, new Uint8Array(data), true, true, function() {
                 window.fileAsyncCache[fullPath] = 1;
                 if (!bitmap && window.setNotBusy) window.setNotBusy();
                 if (window.fileLoadedAsync) window.fileLoadedAsync(fullPath);
                 callback();
                 if (cb1) cb1();
-            }, console.error);
+            }, console.error, false, false, () => {
+                try { FS.unlink(path + "/" + filename); } catch (err) {}
+            });
         });
     }
 
     // Show progress if doing it synchronously only
     if (bitmap && bitmapSizeMapping[mappingKey]) {
-        // Remove existing file
-        try { FS.unlink(path + "/" + filename); } catch (err) {}
-
         // Get image
         const sm = bitmapSizeMapping[mappingKey];
         generationCanvas.width = sm[0];
@@ -88,7 +84,9 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
                 const reloadBitmap = Module.cwrap('reloadBitmap', 'number', ['number'])
                 reloadBitmap(bitmap);
             });
-        }, console.error);
+        }, console.error, false, false, () => {
+            try { FS.unlink(path + "/" + filename); } catch (err) {}
+        });
     } else {
         if (bitmap) {
             console.warn('No sizemap for image', mappingKey);
