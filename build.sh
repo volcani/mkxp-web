@@ -119,7 +119,7 @@ echo "Finished building MKXP"
 
 # Copy to build directory
 mkdir -p build
-cp -R mkxp.html mkxp.wasm mkxp.js extra/js build/
+cp -R mkxp.html mkxp.wasm mkxp.js extra/*.webmanifest extra/js build/
 
 # ==========================
 # GAME_PROCESSING
