@@ -178,184 +178,182 @@
     </div>
 
     <script type='text/javascript'>
-      var namespace = 'kne';
-      var wTitle = 'KN_E'
+        var namespace = 'kne';
+        var wTitle = 'KN_E'
 
-      window.saveFile = function(filename) {
-          const buf = FS.readFile('/game/' + filename);
-          const b64 = _bytesToBase64(buf);
-          localforage.setItem(namespace + filename, b64);
+        window.saveFile = function(filename) {
+            const buf = FS.readFile('/game/' + filename);
+            const b64 = _bytesToBase64(buf);
+            localforage.setItem(namespace + filename, b64);
 
-          localforage.getItem(namespace, function(err, res) {
-              if (err || !res) res = {};
-              res[filename] = 1;
-              localforage.setItem(namespace, res);
-          });
-      };
+            localforage.getItem(namespace, function(err, res) {
+                if (err || !res) res = {};
+                res[filename] = 1;
+                localforage.setItem(namespace, res);
+            });
+        };
 
-      var loadFiles = function() {
-          localforage.getItem(namespace, function(err, res) {
-              if (err || !res) return;
+        var loadFiles = function() {
+            localforage.getItem(namespace, function(err, res) {
+                if (err || !res) return;
 
-              const keys = Object.keys(res);
+                const keys = Object.keys(res);
 
-              console.log('Locally stored savefiles', keys);
+                console.log('Locally stored savefiles', keys);
 
-              keys.forEach((key) => {
-                  localforage.getItem(namespace + key, (err, res) => {
-                      if (err) return;
+                keys.forEach((key) => {
+                    localforage.getItem(namespace + key, (err, res) => {
+                        if (err) return;
 
-                      const buf = _base64ToBytes(res);
-                      FS.writeFile('/game/' + key, buf);
-                  });
-              });
-          });
-      }
-
-      var createDummies = function() {
-          // Base directory
-          FS.mkdir('/game');
-
-          // Create dummy objects
-          Object.values(mapping).forEach((file) => {
-              // Get filename
-              const filename = '/game/' + file.split("?")[0];
-
-              // Check if folder
-              if (file.endsWith('h=')) {
-                  return FS.mkdir(filename);
-              }
-
-              // Create dummy file
-              FS.writeFile(filename, '1');
-          });
-      };
-
-      var Module = {
-        preRun: [createDummies],
-        postRun: [loadFiles],
-        noAudioDecoding: true,
-        print: (function() {
-          return function(text) {
-            console.log(text);
-          };
-        })(),
-        printErr: function(text) {
-          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-          console.error(text);
-        },
-        canvas: (function() {
-          var canvas = document.getElementById('canvas');
-          canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
-
-          return canvas;
-        })(),
-        setStatus: function(text) {
-
+                        const buf = _base64ToBytes(res);
+                        FS.writeFile('/game/' + key, buf);
+                    });
+                });
+            });
         }
-      };
 
-      window.setBusy = function() {
-          document.getElementById('spinner').style.opacity = "0.5";
-      };
+        var createDummies = function() {
+            // Base directory
+            FS.mkdir('/game');
 
-      window.setNotBusy = function() {
-          document.getElementById('spinner').style.opacity = "0";
-      };
+            // Create dummy objects
+            Object.values(mapping).forEach((file) => {
+                // Get filename
+                const filename = '/game/' + file.split("?")[0];
 
-      function fullscreen() {
+                // Check if folder
+                if (file.endsWith('h=')) {
+                    return FS.mkdir(filename);
+                }
+
+                // Create dummy file
+                FS.writeFile(filename, '1');
+            });
+        };
+
+        var Module = {
+            preRun: [createDummies],
+            postRun: [loadFiles],
+            noAudioDecoding: true,
+            print: (function() {
+                return function(text) {
+                    console.log(text);
+                };
+            })(),
+            printErr: function(text) {
+                if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+                console.error(text);
+            },
+            canvas: (function() {
+                var canvas = document.getElementById('canvas');
+                canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
+                return canvas;
+            })(),
+            setStatus: function(text) {}
+        };
+
+        window.setBusy = function() {
+            document.getElementById('spinner').style.opacity = "0.5";
+        };
+
+        window.setNotBusy = function() {
+            document.getElementById('spinner').style.opacity = "0";
+        };
+
+        function fullscreen() {
             document.getElementById('main').requestFullscreen();
             screen.orientation.lock("landscape")
-      }
+        }
 
-      window.onerror = function() {
-          console.error("An error occured!")
-      };
+        window.onerror = function() {
+            console.error("An error occured!")
+        };
 
-      window.fileLoadedAsync = function(file) {
-          document.title = wTitle;
+        window.fileLoadedAsync = function(file) {
+            document.title = wTitle;
 
-          if (!(/.*Map.*rxdata/i.test(file))) return;
+            if (!(/.*Map.*rxdata/i.test(file))) return;
 
-          fetch('preload/' + file + '.json')
-              .then(function(response) {
-                  return response.json();
-              })
-              .then(function(jsonResponse) {
-                  jsonResponse.forEach((f) => {
-                      const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
-                      if (!url) return;
+            fetch('preload/' + file + '.json')
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(jsonResponse) {
+                    jsonResponse.forEach((f) => {
+                        const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
+                        if (!url) return;
 
-                      // Preload the asset
-                      setTimeout(() => {
-                          fetch('gameasync/' + url).then().catch();
-                      }, 1000);
-                  });
-              });
-      };
+                        // Preload the asset
+                        setTimeout(() => {
+                            fetch('gameasync/' + url).then().catch();
+                        }, 1000);
+                    });
+                });
+        };
 
-      var hideTimer = 0;
-      function getLazyAsset(url, filename, callback) {
-          const xhr = new XMLHttpRequest();
-          xhr.responseType = "arraybuffer";
-          const pdiv = document.getElementById("progress");
-          let showTimer = 0;
-          let abortTimer = 0;
+        var hideTimer = 0;
+        function getLazyAsset(url, filename, callback) {
+            const xhr = new XMLHttpRequest();
+            xhr.responseType = "arraybuffer";
+            const pdiv = document.getElementById("progress");
+            let showTimer = 0;
+            let abortTimer = 0;
 
-          const retry = () => {
-              xhr.abort();
-              getLazyAsset(url, filename, callback);
-          }
+            const retry = () => {
+                xhr.abort();
+                getLazyAsset(url, filename, callback);
+            }
 
-          xhr.onreadystatechange = function() {
-              if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
-                  pdiv.innerHTML = `${filename} - done`;
-                  hideTimer = setTimeout(() => {
-                      pdiv.style.opacity = '0';
-                      hideTimer = 0;
-                  }, 500);
-                  clearTimeout(showTimer);
-                  clearTimeout(abortTimer);
-                  callback(xhr.response);
-              }
-          }
-          xhr.onprogress = function (event) {
-              const loaded = Math.round(event.loaded / 1024);
-              const total = Math.round(event.total / 1024);
-              pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
+                    pdiv.innerHTML = `${filename} - done`;
+                    hideTimer = setTimeout(() => {
+                        pdiv.style.opacity = '0';
+                        hideTimer = 0;
+                    }, 500);
+                    clearTimeout(showTimer);
+                    clearTimeout(abortTimer);
+                    callback(xhr.response);
+                }
+            }
+            xhr.onprogress = function (event) {
+                const loaded = Math.round(event.loaded / 1024);
+                const total = Math.round(event.total / 1024);
+                pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
 
-              clearTimeout(abortTimer);
-              abortTimer = setTimeout(retry, 3000);
-          };
-          xhr.open('GET', url);
-          xhr.send();
+                clearTimeout(abortTimer);
+                abortTimer = setTimeout(retry, 3000);
+            };
+            xhr.open('GET', url);
+            xhr.send();
 
-          pdiv.innerHTML = `${filename} - starting`;
+            pdiv.innerHTML = `${filename} - starting`;
 
-          showTimer = setTimeout(() => {
-              pdiv.style.opacity = '0.5';
-          }, 100);
+            showTimer = setTimeout(() => {
+                pdiv.style.opacity = '0.5';
+            }, 100);
 
-          abortTimer = setTimeout(retry, 3000);
+            abortTimer = setTimeout(retry, 3000);
 
-          if (hideTimer) {
-              clearTimeout(hideTimer);
-              hideTimer = 0;
-          }
-      }
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = 0;
+            }
+        }
 
-      document.title = wTitle;
+        document.title = wTitle;
     </script>
 
     <script>
-      // Load wasm then initialize
-      setTimeout(() => {
-          getLazyAsset('mkxp.wasm', 'Game engine', () => {
-              const s = document.createElement('script');
-              s.setAttribute('src', 'mkxp.js');
-              document.body.appendChild(s);
-          });
-      }, 500);
+        // Load wasm then initialize
+        setTimeout(() => {
+            getLazyAsset('mkxp.wasm', 'Game engine', () => {
+                const s = document.createElement('script');
+                s.setAttribute('src', 'mkxp.js');
+                document.body.appendChild(s);
+            });
+        }, 500);
 
     function simulateKeyEvent(eventType, keyCode, charCode) {
         var e = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
