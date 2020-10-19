@@ -119,11 +119,16 @@ public:
 
 	sigc::signal<void> modified;
 
+	char filename[512];
+	void loadFromFilename();
+	void (*reloadCallback)(void *) = NULL;
+	void * reloadCallbackData = NULL;
+
 private:
 	void releaseResources();
 	const char *klassName() const { return "bitmap"; }
 
-	BitmapPrivate *p;
+	BitmapPrivate *p = 0;
 };
 
 #endif // BITMAP_H

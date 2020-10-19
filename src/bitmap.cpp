@@ -137,7 +137,7 @@ struct BitmapPrivate
 	}
 
 	void addTaintedArea(const IntRect &rect)
-	{	
+	{
 		IntRect norm = normalizedRect(rect);
 		pixman_region_union_rect
 		        (&tainted, &tainted, norm.x, norm.y, norm.w, norm.h);
@@ -258,8 +258,22 @@ struct BitmapOpenHandler : FileSystem::OpenHandler
 
 Bitmap::Bitmap(const char *filename)
 {
+	strcpy(this->filename, filename);
+	this->loadFromFilename();
+}
+
+void Bitmap::loadFromFilename()
+{
+	char * filename = this->filename;
+
 #ifdef __EMSCRIPTEN__
-	load_file_async_js(filename);
+	bool reloading = false;
+	if (this->p) {
+		this->releaseResources();
+		reloading = true;
+	} else {
+		load_file_async_js(filename, (int)this);
+	}
 #endif
 
 	BitmapOpenHandler handler;
@@ -267,7 +281,7 @@ Bitmap::Bitmap(const char *filename)
 	SDL_Surface *imgSurf = handler.surf;
 
 	if (!imgSurf) {
-		printf("ERROR OCCURED LOADING IMAGE %s : %s\n", filename, SDL_GetError());
+		printf("Error occured loading image %s : %s\n", filename, SDL_GetError());
 		throw Exception(Exception::SDLError, "Error loading image '%s': %s",
 		                filename, SDL_GetError());
 	}
@@ -306,6 +320,11 @@ Bitmap::Bitmap(const char *filename)
 	}
 
 	p->addTaintedArea(rect());
+
+#ifdef __EMSCRIPTEN__
+	if (reloading && this->reloadCallback)
+		this->reloadCallback(this->reloadCallbackData);
+#endif
 }
 
 Bitmap::Bitmap(int width, int height)
@@ -1051,7 +1070,7 @@ void Bitmap::drawText(const IntRect &rect, const char *str, int align)
 			outline = TTF_RenderUTF8_Blended(font, str, co);
 
 		p->ensureFormat(outline, SDL_PIXELFORMAT_ABGR8888);
-		SDL_Rect outRect = {OUTLINE_SIZE, OUTLINE_SIZE, txtSurf->w, txtSurf->h}; 
+		SDL_Rect outRect = {OUTLINE_SIZE, OUTLINE_SIZE, txtSurf->w, txtSurf->h};
 
 		SDL_SetSurfaceBlendMode(txtSurf, SDL_BLENDMODE_BLEND);
 		SDL_BlitSurface(txtSurf, NULL, outline, &outRect);
@@ -1334,3 +1353,15 @@ void Bitmap::releaseResources()
 
 	delete p;
 }
+
+#ifdef __EMSCRIPTEN__
+extern "C" {
+int reloadBitmap(int intptr) {
+	Bitmap * bitmap = (Bitmap*) intptr;
+	if (bitmap->isDisposed()) return 0;
+
+	bitmap->loadFromFilename();
+	return 1;
+}
+}
+#endif

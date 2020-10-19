@@ -1147,6 +1147,14 @@ DEF_ATTR_RD_SIMPLE(Tilemap, Visible, bool, p->visible)
 DEF_ATTR_RD_SIMPLE(Tilemap, OX, int, p->origin.x)
 DEF_ATTR_RD_SIMPLE(Tilemap, OY, int, p->origin.y)
 
+void invalidateBitmap(void * tilemap) {
+	((Tilemap *) tilemap)->invalidate();
+}
+
+void Tilemap::invalidate() {
+	p->invalidateAtlasContents();
+}
+
 void Tilemap::setTileset(Bitmap *value)
 {
 	guardDisposed();
@@ -1158,6 +1166,9 @@ void Tilemap::setTileset(Bitmap *value)
 
 	if (!value)
 		return;
+
+	value->reloadCallback = invalidateBitmap;
+	value->reloadCallbackData = (void *) this;
 
 	p->invalidateAtlasSize();
 	p->tilesetCon.disconnect();

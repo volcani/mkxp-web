@@ -54,6 +54,7 @@ public:
 	~Tilemap();
 
 	void update();
+	void invalidate();
 
 	Autotiles &getAutotiles();
 	Viewport *getViewport() const;

@@ -64,12 +64,12 @@ find_package(PkgConfig REQUIRED)
 
 if (EXTERNAL_LIB_PATH)
 	set(CMAKE_PREFIX_PATH ${EXTERNAL_LIB_PATH})
-	
+
 	if(EXISTS "${EXTERNAL_LIB_PATH}/${LIB_PATH}/pkgconfig/")
 		SET(ENV{PKG_CONFIG_PATH} "${EXTERNAL_LIB_PATH}/${LIB_PATH}/pkgconfig/")
 	endif()
 	if(APPLE)
-		set(PLATFORM_SHARED_LIBS 
+		set(PLATFORM_SHARED_LIBS
 			libSDL2.dylib libSDL2_image-2.0.0.dylib libSDL2_ttf-2.0.0.dylib libSDL_sound-1.0.1.dylib
 			libfreetype.6.dylib libsigc-2.0.0.dylib
 			CACHE STRING "List of shared libraries that need to be copied into the OS X bundle")
@@ -404,7 +404,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	deps/libsigc++
 	deps/pixman/pixman
 	deps/physfs/src
-	deps/mruby/include	
+	deps/mruby/include
 
 	${SDL2_INCLUDE_DIRS}
 	${FLUID_INCLUDE_DIRS}
@@ -435,11 +435,11 @@ SET(ASYNCIFY "-s ASYNCIFY=1 -s 'ASYNCIFY_IMPORTS=[\"load_file_async_js\"]'")
 
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EMS_FLAGS} ${ASYNCIFY} -lopenal -s DISABLE_EXCEPTION_CATCHING=1 -s ASSERTIONS=0 -s SAFE_HEAP=0 -s MINIFY_HTML=0  --shell-file extra/shell.html -s EMULATE_FUNCTION_POINTER_CASTS=0 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EMS_FLAGS} ${ASYNCIFY} -lopenal -s DISABLE_EXCEPTION_CATCHING=1 -s ASSERTIONS=0 -s SAFE_HEAP=0 -s MINIFY_HTML=0  --shell-file extra/shell.html -s EMULATE_FUNCTION_POINTER_CASTS=0 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s EXPORTED_FUNCTIONS='[\"_main\",\"_reloadBitmap\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]'")
 
 set_target_properties(
     ${PROJECT_NAME}
-    PROPERTIES 
+    PROPERTIES
         OUTPUT_NAME "mkxp"
         SUFFIX ".html"
 )
