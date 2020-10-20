@@ -21,23 +21,26 @@ function _base64ToBytes(base64) {
 
 // Canvas used for image generation
 var generationCanvas = document.createElement('canvas')
+window.fileAsyncCache = {};
+
+window.getMappingKey = function(file) {
+    return file.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")
+}
 
 window.loadFileAsync = function(fullPath, bitmap, callback) {
     // noop
     callback = callback || (() => {});
 
-    // Make cache object
-    if (!window.fileAsyncCache) window.fileAsyncCache = {};
+    // Get mapping key
+    const mappingKey = getMappingKey(fullPath);
+    const mappingValue = mapping[mappingKey];
 
     // Check if already loaded
-    if (window.fileAsyncCache.hasOwnProperty(fullPath)) return callback();
+    if (window.fileAsyncCache.hasOwnProperty(mappingKey)) return callback();
+    console.log('load', mappingKey);
 
     // Show spinner
     if (!bitmap && window.setBusy) window.setBusy();
-
-    // Get mapping key
-    const mappingKey = fullPath.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "");
-    const mappingValue = mapping[mappingKey];
 
     // Check if this is a folder
     if (!mappingValue || mappingValue.endsWith("h=")) {
@@ -56,7 +59,7 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
     const load = (cb1) => {
         getLazyAsset(iurl, filename, (data) => {
             FS.createPreloadedFile(path, filename, new Uint8Array(data), true, true, function() {
-                window.fileAsyncCache[fullPath] = 1;
+                window.fileAsyncCache[mappingKey] = 1;
                 if (!bitmap && window.setNotBusy) window.setNotBusy();
                 if (window.fileLoadedAsync) window.fileLoadedAsync(fullPath);
                 callback();
@@ -101,5 +104,154 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
             console.warn('No sizemap for image', mappingKey);
         }
         load();
+    }
+}
+
+
+window.saveFile = function(filename) {
+    const buf = FS.readFile('/game/' + filename);
+    const b64 = _bytesToBase64(buf);
+    localforage.setItem(namespace + filename, b64);
+
+    localforage.getItem(namespace, function(err, res) {
+        if (err || !res) res = {};
+        res[filename] = 1;
+        localforage.setItem(namespace, res);
+    });
+};
+
+var loadFiles = function() {
+    localforage.getItem(namespace, function(err, res) {
+        if (err || !res) return;
+
+        const keys = Object.keys(res);
+
+        console.log('Locally stored savefiles', keys);
+
+        keys.forEach((key) => {
+            localforage.getItem(namespace + key, (err, res) => {
+                if (err) return;
+
+                const buf = _base64ToBytes(res);
+                FS.writeFile('/game/' + key, buf);
+            });
+        });
+    });
+}
+
+var createDummies = function() {
+    // Base directory
+    FS.mkdir('/game');
+
+    // Create dummy objects
+    Object.values(mapping).forEach((file) => {
+        // Get filename
+        const filename = '/game/' + file.split("?")[0];
+
+        // Check if folder
+        if (file.endsWith('h=')) {
+            return FS.mkdir(filename);
+        }
+
+        // Create dummy file
+        FS.writeFile(filename, '1');
+    });
+};
+
+window.setBusy = function() {
+    document.getElementById('spinner').style.opacity = "0.5";
+};
+
+window.setNotBusy = function() {
+    document.getElementById('spinner').style.opacity = "0";
+};
+
+window.onerror = function() {
+    console.error("An error occured!")
+};
+
+function preloadList(jsonArray) {
+    jsonArray.forEach((file) => {
+        const mappingKey = getMappingKey(file);
+        const mappingValue = mapping[mappingKey];
+        if (!mappingValue || window.fileAsyncCache[mappingKey]) return;
+
+        // Get path and filename
+        const path = "/game/" + mappingValue.substring(0, mappingValue.lastIndexOf("/"));
+        const filename = mappingValue.substring(mappingValue.lastIndexOf("/") + 1).split("?")[0];
+
+        // Preload the asset
+        FS.createPreloadedFile(path, filename, "gameasync/" + mappingValue, true, true, function() {
+            window.fileAsyncCache[mappingKey] = 1;
+            console.log('preload', mappingKey);
+        }, console.error, false, false, () => {
+            try { FS.unlink(path + "/" + filename); } catch (err) {}
+        });
+    });
+}
+
+window.fileLoadedAsync = function(file) {
+    document.title = wTitle;
+
+    if (!(/.*Map.*rxdata/i.test(file))) return;
+
+    fetch('preload/' + file + '.json')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(jsonResponse) {
+            setTimeout(() => {
+                preloadList(jsonResponse);
+            }, 200);
+        });
+};
+
+var hideTimer = 0;
+function getLazyAsset(url, filename, callback) {
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = "arraybuffer";
+    const pdiv = document.getElementById("progress");
+    let showTimer = 0;
+    let abortTimer = 0;
+
+    const retry = () => {
+        xhr.abort();
+        getLazyAsset(url, filename, callback);
+    }
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
+            pdiv.innerHTML = `${filename} - done`;
+            hideTimer = setTimeout(() => {
+                pdiv.style.opacity = '0';
+                hideTimer = 0;
+            }, 500);
+            clearTimeout(showTimer);
+            clearTimeout(abortTimer);
+            callback(xhr.response);
+        }
+    }
+    xhr.onprogress = function (event) {
+        const loaded = Math.round(event.loaded / 1024);
+        const total = Math.round(event.total / 1024);
+        pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
+
+        clearTimeout(abortTimer);
+        abortTimer = setTimeout(retry, 3000);
+    };
+    xhr.open('GET', url);
+    xhr.send();
+
+    pdiv.innerHTML = `${filename} - starting`;
+
+    showTimer = setTimeout(() => {
+        pdiv.style.opacity = '0.5';
+    }, 100);
+
+    abortTimer = setTimeout(retry, 3000);
+
+    if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = 0;
     }
 }

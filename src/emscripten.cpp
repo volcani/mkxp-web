@@ -13,7 +13,9 @@ EM_JS(void, save_file_async_js, (const char* fullPathC), {
 });
 
 EM_JS(int, file_is_cached, (const char* fullPathC), {
-	return window.fileAsyncCache.hasOwnProperty(UTF8ToString(fullPathC)) ? 1 : 0;
+	const fullPath = UTF8ToString(fullPathC);
+	const mappingKey = getMappingKey(fullPath);
+	return window.fileAsyncCache.hasOwnProperty(mappingKey) ? 1 : 0;
 });
 
 #endif
