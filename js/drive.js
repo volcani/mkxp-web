@@ -74,19 +74,28 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
         generationCanvas.width = sm[0];
         generationCanvas.height = sm[1];
 
-        // Create dummy from data uri
-        FS.createPreloadedFile(path, filename, generationCanvas.toDataURL(), true, true, function() {
-            // Return control to C++
-            callback(); callback = () => {};
+        // Draw
+        var img = new Image;
+        img.onload = function(){
+            const ctx = generationCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, sm[0], sm[1]);
 
-            // Lazy load and refresh
-            load(() => {
-                const reloadBitmap = Module.cwrap('reloadBitmap', 'number', ['number'])
-                reloadBitmap(bitmap);
+            // Create dummy from data uri
+            FS.createPreloadedFile(path, filename, generationCanvas.toDataURL(), true, true, function() {
+                // Return control to C++
+                callback(); callback = () => {};
+
+                // Lazy load and refresh
+                load(() => {
+                    const reloadBitmap = Module.cwrap('reloadBitmap', 'number', ['number'])
+                    reloadBitmap(bitmap);
+                });
+            }, console.error, false, false, () => {
+                try { FS.unlink(path + "/" + filename); } catch (err) {}
             });
-        }, console.error, false, false, () => {
-            try { FS.unlink(path + "/" + filename); } catch (err) {}
-        });
+        };
+
+        img.src = sm[2];
     } else {
         if (bitmap) {
             console.warn('No sizemap for image', mappingKey);
