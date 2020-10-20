@@ -172,11 +172,15 @@ function preloadList(jsonArray) {
         const filename = mappingValue.substring(mappingValue.lastIndexOf("/") + 1).split("?")[0];
 
         // Preload the asset
-        FS.createPreloadedFile(path, filename, "gameasync/" + mappingValue, true, true, function() {
-            window.fileAsyncCache[mappingKey] = 1;
-        }, console.error, false, false, () => {
-            try { FS.unlink(path + "/" + filename); } catch (err) {}
-        });
+        getLazyAsset("gameasync/" + mappingValue, filename, (data) => {
+            if (!data) return;
+
+            FS.createPreloadedFile(path, filename, new Uint8Array(data), true, true, function() {
+                window.fileAsyncCache[mappingKey] = 1;
+            }, console.error, false, false, () => {
+                try { FS.unlink(path + "/" + filename); } catch (err) {}
+            });
+        }, true);
     });
 }
 
@@ -196,28 +200,36 @@ window.fileLoadedAsync = function(file) {
         });
 };
 
-var hideTimer = 0;
-function getLazyAsset(url, filename, callback) {
+var activeStreams = [];
+function getLazyAsset(url, filename, callback, noretry) {
     const xhr = new XMLHttpRequest();
     xhr.responseType = "arraybuffer";
     const pdiv = document.getElementById("progress");
-    let showTimer = 0;
     let abortTimer = 0;
+
+    const end = (message) => {
+        pdiv.innerHTML = `${filename} - ${message}`;
+        activeStreams.splice(activeStreams.indexOf(filename), 1);
+        if (activeStreams.length === 0) {
+            pdiv.style.opacity = '0';
+        }
+        clearTimeout(abortTimer);
+    }
 
     const retry = () => {
         xhr.abort();
-        getLazyAsset(url, filename, callback);
+
+        if (noretry) {
+            end('skip'); callback(null);
+        } else {
+            activeStreams.splice(activeStreams.indexOf(filename), 1);
+            getLazyAsset(url, filename, callback);
+        }
     }
 
     xhr.onreadystatechange = function() {
         if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
-            pdiv.innerHTML = `${filename} - done`;
-            hideTimer = setTimeout(() => {
-                pdiv.style.opacity = '0';
-                hideTimer = 0;
-            }, 500);
-            clearTimeout(showTimer);
-            clearTimeout(abortTimer);
+            end('done');
             callback(xhr.response);
         }
     }
@@ -232,16 +244,10 @@ function getLazyAsset(url, filename, callback) {
     xhr.open('GET', url);
     xhr.send();
 
-    pdiv.innerHTML = `${filename} - starting`;
+    pdiv.innerHTML = `${filename} - start`;
+    pdiv.style.opacity = '0.5';
 
-    showTimer = setTimeout(() => {
-        pdiv.style.opacity = '0.5';
-    }, 100);
+    activeStreams.push(filename);
 
     abortTimer = setTimeout(retry, 10000);
-
-    if (hideTimer) {
-        clearTimeout(hideTimer);
-        hideTimer = 0;
-    }
 }
