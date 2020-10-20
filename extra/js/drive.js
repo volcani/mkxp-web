@@ -1,24 +1,3 @@
-// https://stackoverflow.com/a/9458996
-function _bytesToBase64(bytes) {
-    var binary = '';
-    var len = bytes.byteLength;
-    for (var i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-}
-
-// https://stackoverflow.com/a/21797381
-function _base64ToBytes(base64) {
-    var binary_string = window.atob(base64);
-    var len = binary_string.length;
-    var bytes = new Uint8Array(len);
-    for (var i = 0; i < len; i++) {
-        bytes[i] = binary_string.charCodeAt(i);
-    }
-    return bytes;
-}
-
 // Canvas used for image generation
 var generationCanvas = document.createElement('canvas')
 window.fileAsyncCache = {};
@@ -109,8 +88,7 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
 
 window.saveFile = function(filename) {
     const buf = FS.readFile('/game/' + filename);
-    const b64 = _bytesToBase64(buf);
-    localforage.setItem(namespace + filename, b64);
+    localforage.setItem(namespace + filename, buf);
 
     localforage.getItem(namespace, function(err, res) {
         if (err || !res) res = {};
@@ -118,7 +96,7 @@ window.saveFile = function(filename) {
         localforage.setItem(namespace, res);
     });
 
-    (window.saveCloudFile || (()=>{}))(filename, buf, b64);
+    (window.saveCloudFile || (()=>{}))(filename, buf);
 };
 
 var loadFiles = function() {
@@ -133,8 +111,11 @@ var loadFiles = function() {
             localforage.getItem(namespace + key, (err, res) => {
                 if (err) return;
 
-                const buf = _base64ToBytes(res);
-                FS.writeFile('/game/' + key, buf);
+                // Don't overwrite existing files
+                const fname = '/game/' + key;
+                if (FS.analyzePath(fname).exists) return;
+
+                FS.writeFile(fname, res);
             });
         });
     });
