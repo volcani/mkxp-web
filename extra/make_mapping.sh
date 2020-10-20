@@ -3,23 +3,16 @@
 echo "var mapping = {" > mapping.js
 echo "var bitmapSizeMapping = {" > bitmap-map.js
 
-for file in {*,*/*,*/**/*}
+for file in {*,*/*,*/**/*,*/**/**/*}
 do
 
 filename="${file%.*}"
 fl="$(echo "$filename" | tr '[:upper:]' '[:lower:]')"
 
-if [ -f $file ]
+if [ -f "${file}" ]
 then
     md5=`md5sum "${file}" | awk '{ print $1 }'`
-else
-    md5=''
-fi
 
-echo "\"$fl\": \"${file}?h=${md5}\"," >> mapping.js
-
-if [ -f $file ]
-then
     sz=`identify -format "%w,%h" "${file}" 2>/dev/null`
     if [ $? -eq 0 ]; then
         convert "$file" -resize 64x64\> "conv.png"
@@ -30,7 +23,11 @@ then
 
         echo "\"$fl\": [${sz},\"${duri}\"]," >> bitmap-map.js
     fi
+else
+    md5=''
 fi
+
+echo "\"$fl\": \"${file}?h=${md5}\"," >> mapping.js
 
 done
 
