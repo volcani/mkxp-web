@@ -117,6 +117,8 @@ window.saveFile = function(filename) {
         res[filename] = 1;
         localforage.setItem(namespace, res);
     });
+
+    (window.saveCloudFile || (()=>{}))(filename, buf, b64);
 };
 
 var loadFiles = function() {
@@ -136,6 +138,8 @@ var loadFiles = function() {
             });
         });
     });
+
+    (window.loadCloudFiles || (()=>{}))();
 }
 
 var createDummies = function() {
