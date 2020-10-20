@@ -119,7 +119,7 @@ public:
 
 	sigc::signal<void> modified;
 
-	char filename[512];
+	char filename[512] = {0};
 	void loadFromFilename();
 	void (*reloadCallback)(void *) = NULL;
 	void * reloadCallbackData = NULL;
