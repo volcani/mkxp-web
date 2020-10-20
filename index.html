@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
     <script src="js/localforage.min.js"></script>
     <script src="js/drive.js"></script>
+    <script src="js/dpad.js"></script>
     <script src="gameasync/mapping.js"></script>
     <script src="gameasync/bitmap-map.js"></script>
 
@@ -180,60 +181,11 @@
     <script type='text/javascript'>
         var namespace = 'kne';
         var wTitle = 'KN_E'
-
-        window.saveFile = function(filename) {
-            const buf = FS.readFile('/game/' + filename);
-            const b64 = _bytesToBase64(buf);
-            localforage.setItem(namespace + filename, b64);
-
-            localforage.getItem(namespace, function(err, res) {
-                if (err || !res) res = {};
-                res[filename] = 1;
-                localforage.setItem(namespace, res);
-            });
-        };
-
-        var loadFiles = function() {
-            localforage.getItem(namespace, function(err, res) {
-                if (err || !res) return;
-
-                const keys = Object.keys(res);
-
-                console.log('Locally stored savefiles', keys);
-
-                keys.forEach((key) => {
-                    localforage.getItem(namespace + key, (err, res) => {
-                        if (err) return;
-
-                        const buf = _base64ToBytes(res);
-                        FS.writeFile('/game/' + key, buf);
-                    });
-                });
-            });
-        }
-
-        var createDummies = function() {
-            // Base directory
-            FS.mkdir('/game');
-
-            // Create dummy objects
-            Object.values(mapping).forEach((file) => {
-                // Get filename
-                const filename = '/game/' + file.split("?")[0];
-
-                // Check if folder
-                if (file.endsWith('h=')) {
-                    return FS.mkdir(filename);
-                }
-
-                // Create dummy file
-                FS.writeFile(filename, '1');
-            });
-        };
+        document.title = wTitle;
 
         var Module = {
             preRun: [createDummies],
-            postRun: [loadFiles],
+            postRun: [loadFiles, preloadInit],
             noAudioDecoding: true,
             print: (function() {
                 return function(text) {
@@ -253,120 +205,32 @@
             setStatus: function(text) {}
         };
 
-        window.setBusy = function() {
-            document.getElementById('spinner').style.opacity = "0.5";
-        };
-
-        window.setNotBusy = function() {
-            document.getElementById('spinner').style.opacity = "0";
-        };
-
         function fullscreen() {
             document.getElementById('main').requestFullscreen();
             screen.orientation.lock("landscape")
         }
 
-        window.onerror = function() {
-            console.error("An error occured!")
-        };
-
-        function preloadList(jsonArray) {
-            jsonArray.forEach((f) => {
-                const url = mapping[f.toLowerCase().replace(new RegExp("\\.[^/.]+$"), "")];
-                if (!url) return;
-
-                // Preload the asset
-                fetch('gameasync/' + url).then().catch();
-            });
+        function preloadInit() {
+            // Load important files
+            preloadList([
+                'rgss.rb',
+                'data/scripts',
+                'data/actors',
+                'data/classes',
+                'data/skills',
+                'data/items',
+                'data/weapons',
+                'data/armors',
+                'data/enemies',
+                'data/troops',
+                'data/states',
+                'data/animations',
+                'data/tilesets',
+                'data/commonevents',
+                'data/system',
+                'data/mapinfos',
+            ]);
         }
-
-        window.fileLoadedAsync = function(file) {
-            document.title = wTitle;
-
-            if (!(/.*Map.*rxdata/i.test(file))) return;
-
-            fetch('preload/' + file + '.json')
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(jsonResponse) {
-                    setTimeout(() => {
-                        preloadList(jsonResponse);
-                    }, 200);
-                });
-        };
-
-        var hideTimer = 0;
-        function getLazyAsset(url, filename, callback) {
-            const xhr = new XMLHttpRequest();
-            xhr.responseType = "arraybuffer";
-            const pdiv = document.getElementById("progress");
-            let showTimer = 0;
-            let abortTimer = 0;
-
-            const retry = () => {
-                xhr.abort();
-                getLazyAsset(url, filename, callback);
-            }
-
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == XMLHttpRequest.DONE && xhr.status >= 200 && xhr.status < 400) {
-                    pdiv.innerHTML = `${filename} - done`;
-                    hideTimer = setTimeout(() => {
-                        pdiv.style.opacity = '0';
-                        hideTimer = 0;
-                    }, 500);
-                    clearTimeout(showTimer);
-                    clearTimeout(abortTimer);
-                    callback(xhr.response);
-                }
-            }
-            xhr.onprogress = function (event) {
-                const loaded = Math.round(event.loaded / 1024);
-                const total = Math.round(event.total / 1024);
-                pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
-
-                clearTimeout(abortTimer);
-                abortTimer = setTimeout(retry, 3000);
-            };
-            xhr.open('GET', url);
-            xhr.send();
-
-            pdiv.innerHTML = `${filename} - starting`;
-
-            showTimer = setTimeout(() => {
-                pdiv.style.opacity = '0.5';
-            }, 100);
-
-            abortTimer = setTimeout(retry, 3000);
-
-            if (hideTimer) {
-                clearTimeout(hideTimer);
-                hideTimer = 0;
-            }
-        }
-
-        document.title = wTitle;
-
-        // Load important files
-        preloadList([
-            'rgss.rb',
-            'data/scripts',
-            'data/actors',
-            'data/classes',
-            'data/skills',
-            'data/items',
-            'data/weapons',
-            'data/armors',
-            'data/enemies',
-            'data/troops',
-            'data/states',
-            'data/animations',
-            'data/tilesets',
-            'data/commonevents',
-            'data/system',
-            'data/mapinfos',
-        ]);
 
         // Load wasm then initialize
         setTimeout(() => {
@@ -376,77 +240,6 @@
                 document.body.appendChild(s);
             });
         }, 200);
-
-        function simulateKeyEvent(eventType, keyCode, charCode) {
-            var e = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
-            if (e.initEvent) e.initEvent(eventType, true, true);
-
-            e.keyCode = keyCode;
-            e.which = keyCode;
-            e.charCode = charCode;
-
-            // Dispatch directly to Emscripten's html5.h API (use this if page uses emscripten/html5.h event handling):
-            if (typeof JSEvents !== 'undefined' && JSEvents.eventHandlers && JSEvents.eventHandlers.length > 0) {
-                for(var i = 0; i < JSEvents.eventHandlers.length; ++i) {
-                    if ((JSEvents.eventHandlers[i].target == Module['canvas'] || JSEvents.eventHandlers[i].target == window)
-                        && JSEvents.eventHandlers[i].eventTypeString == eventType) {
-                        JSEvents.eventHandlers[i].handlerFunc(e);
-                    }
-                }
-            } else {
-                // Dispatch to browser for real (use this if page uses SDL or something else for event handling):
-                Module['canvas'].dispatchEvent ? Module['canvas'].dispatchEvent(e) : Module['canvas'].fireEvent("on" + eventType, e);
-            }
-        }
-
-        // Mappings
-        const keyMap = {};
-        const keysDown = {};
-
-        /** Add virtual key binding */
-        function bindKey(elem, key) {
-            keyMap[elem] = key;
-            const ne = document.getElementById(elem);
-
-            ne.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                simulateKeyEvent('keydown', key);
-                keysDown[e.target.id] = elem;
-            });
-            ne.addEventListener('touchend', function(e) {
-                e.preventDefault();
-                if (keysDown[e.target.id] && keyMap[keysDown[e.target.id]]) {
-                    simulateKeyEvent('keyup', keyMap[keysDown[e.target.id]]);
-                }
-                keysDown[e.target.id] = 0;
-            });
-
-            ne.addEventListener('touchmove', function(event) {
-                const myLocation = event.changedTouches[0];
-                const realTarget = document.elementFromPoint(myLocation.clientX, myLocation.clientY).id;
-                const origTarget = keysDown[myLocation.target.id];
-
-                if (origTarget !== realTarget) {
-                    if (origTarget) {
-                        simulateKeyEvent('keyup', keyMap[origTarget]);
-                        keysDown[myLocation.target.id] = 0;
-                    }
-                    if (keyMap[realTarget]) {
-                        simulateKeyEvent('keydown', keyMap[realTarget]);
-                        keysDown[myLocation.target.id] = realTarget;
-                    }
-                }
-            });
-        }
-
-        function is_touch_device() {
-            try {
-                document.createEvent("TouchEvent");
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
 
         if (!is_touch_device()) {
             document.getElementById('dpad').style.display = 'none';
@@ -463,18 +256,6 @@
         bindKey('ap-a', 90);
         bindKey('ap-ka', 65);
 
-        const resize = function() {
-            const el = document.getElementById('canvas');
-            if (window.innerHeight > window.innerWidth) {
-                el.style.height = 'unset';
-                el.style.width = '100%';
-            } else {
-                el.style.width = 'unset';
-                el.style.height = '100%';
-            }
-        }
-
-        window.addEventListener('resize', resize);
         resize();
     </script>
 
