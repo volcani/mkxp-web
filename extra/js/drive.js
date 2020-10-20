@@ -37,7 +37,6 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
 
     // Check if already loaded
     if (window.fileAsyncCache.hasOwnProperty(mappingKey)) return callback();
-    console.log('load', mappingKey);
 
     // Show spinner
     if (!bitmap && window.setBusy) window.setBusy();
@@ -183,7 +182,6 @@ function preloadList(jsonArray) {
         // Preload the asset
         FS.createPreloadedFile(path, filename, "gameasync/" + mappingValue, true, true, function() {
             window.fileAsyncCache[mappingKey] = 1;
-            console.log('preload', mappingKey);
         }, console.error, false, false, () => {
             try { FS.unlink(path + "/" + filename); } catch (err) {}
         });

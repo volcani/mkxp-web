@@ -9,7 +9,6 @@
     <script src="js/drive.js"></script>
     <script src="js/dpad.js"></script>
     <script src="gameasync/mapping.js"></script>
-    <script src="gameasync/bitmap-map.js"></script>
 
     <title>MKXP</title>
     <style>
@@ -238,8 +237,15 @@
                 const s = document.createElement('script');
                 s.setAttribute('src', 'mkxp.js');
                 document.body.appendChild(s);
+
+                getLazyAsset('gameasync/bitmap-map.js', 'Primary assets', () => {
+                        const s = document.createElement('script');
+                        s.setAttribute('src', 'gameasync/bitmap-map.js');
+                        document.body.appendChild(s);
+                });
             });
         }, 200);
+        var bitmapSizeMapping = {};
 
         if (!is_touch_device()) {
             document.getElementById('dpad').style.display = 'none';
