@@ -22,7 +22,13 @@ if [ -f $file ]
 then
     sz=`identify -format "%w,%h" "${file}" 2>/dev/null`
     if [ $? -eq 0 ]; then
-        echo "\"$fl\": [${sz}]," >> bitmap-map.js
+        convert "$file" -resize 64x64\> "conv.png"
+        mimetype=$(file -bN --mime-type "conv.png")
+        content=$(base64 -w0 < "conv.png")
+        duri="data:$mimetype;base64,$content"
+        rm "conv.png"
+
+        echo "\"$fl\": [${sz},\"${duri}\"]," >> bitmap-map.js
     fi
 fi
 
