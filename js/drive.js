@@ -135,18 +135,18 @@ var createDummies = function() {
     FS.mkdir('/game');
 
     // Create dummy objects
-    Object.values(mapping).forEach((file) => {
+    for (var i = 0; i < mappingArray.length; i++) {
         // Get filename
+        const file = mappingArray[i][1];
         const filename = '/game/' + file.split("?")[0];
 
         // Check if folder
         if (file.endsWith('h=')) {
-            return FS.mkdir(filename);
+            FS.mkdir(filename);
+        } else {
+            FS.writeFile(filename, '1');
         }
-
-        // Create dummy file
-        FS.writeFile(filename, '1');
-    });
+    }
 };
 
 window.setBusy = function() {
