@@ -86,39 +86,46 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
 }
 
 
-window.saveFile = function(filename) {
-    const buf = FS.readFile('/game/' + filename);
+window.saveFile = function(filename, localOnly) {
+    const fpath = '/game/' + filename;
+    if (!FS.analyzePath(fpath).exists) return;
+
+    const buf = FS.readFile(fpath);
     localforage.setItem(namespace + filename, buf);
 
     localforage.getItem(namespace, function(err, res) {
         if (err || !res) res = {};
-        res[filename] = 1;
+        res[filename] = { t: Number(FS.stat(fpath).mtime) };
         localforage.setItem(namespace, res);
     });
 
-    (window.saveCloudFile || (()=>{}))(filename, buf);
+    if (!localOnly) {
+        (window.saveCloudFile || (()=>{}))(filename, buf);
+    }
 };
 
 var loadFiles = function() {
-    localforage.getItem(namespace, function(err, res) {
-        if (err || !res) return;
+    localforage.getItem(namespace, function(err, folder) {
+        if (err || !folder) return;
+        console.log('Locally stored savefiles:', folder);
 
-        const keys = Object.keys(res);
-
-        console.log('Locally stored savefiles', keys);
-
-        keys.forEach((key) => {
+        Object.keys(folder).forEach((key) => {
+            const meta = folder[key];
             localforage.getItem(namespace + key, (err, res) => {
-                if (err) return;
+                if (err || !res) return;
 
                 // Don't overwrite existing files
-                const fname = '/game/' + key;
-                if (FS.analyzePath(fname).exists) return;
+                const fpath = '/game/' + key;
+                if (FS.analyzePath(fpath).exists) return;
 
-                FS.writeFile(fname, res);
+                FS.writeFile(fpath, res);
+
+                if (Number.isInteger(meta.t)) {
+                    FS.utime(fpath, meta.t, meta.t);
+                }
             });
         });
-    });
+    }, console.error);
 
     (window.loadCloudFiles || (()=>{}))();
 }
