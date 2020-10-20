@@ -237,7 +237,7 @@ function getLazyAsset(url, filename, callback) {
         pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
 
         clearTimeout(abortTimer);
-        abortTimer = setTimeout(retry, 3000);
+        abortTimer = setTimeout(retry, 10000);
     };
     xhr.open('GET', url);
     xhr.send();
@@ -248,7 +248,7 @@ function getLazyAsset(url, filename, callback) {
         pdiv.style.opacity = '0.5';
     }, 100);
 
-    abortTimer = setTimeout(retry, 3000);
+    abortTimer = setTimeout(retry, 10000);
 
     if (hideTimer) {
         clearTimeout(hideTimer);
