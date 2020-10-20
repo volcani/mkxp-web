@@ -1,10 +1,10 @@
 #!/bin/bash
 
-echo "var mapping = {" > mapping.js
+echo "var mappingArray = [" > mapping.js
 echo "var bitmapSizeMapping = {" > bitmap-map.js
 
-for file in {*,*/*,*/**/*,*/**/**/*}
-do
+shopt -s globstar
+for file in **/*; do
 
 filename="${file%.*}"
 fl="$(echo "$filename" | tr '[:upper:]' '[:lower:]')"
@@ -27,10 +27,17 @@ else
     md5=''
 fi
 
-echo "\"$fl\": \"${file}?h=${md5}\"," >> mapping.js
+echo "[\"$fl\", \"${file}?h=${md5}\"]," >> mapping.js
 
 done
 
-echo "};" >> mapping.js
+echo "];" >> mapping.js
 echo "};" >> bitmap-map.js
+
+echo "
+var mapping = {};
+for (var i = 0; i < mappingArray.length; i++) {
+    mapping[mappingArray[i][0]] = mappingArray[i][1];
+}
+" >> mapping.js
 
