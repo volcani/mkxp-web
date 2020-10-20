@@ -1,24 +1,3 @@
-// https://stackoverflow.com/a/9458996
-function _bytesToBase64(bytes) {
-    var binary = '';
-    var len = bytes.byteLength;
-    for (var i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-}
-
-// https://stackoverflow.com/a/21797381
-function _base64ToBytes(base64) {
-    var binary_string = window.atob(base64);
-    var len = binary_string.length;
-    var bytes = new Uint8Array(len);
-    for (var i = 0; i < len; i++) {
-        bytes[i] = binary_string.charCodeAt(i);
-    }
-    return bytes;
-}
-
 // Canvas used for image generation
 var generationCanvas = document.createElement('canvas')
 window.fileAsyncCache = {};
@@ -37,7 +16,6 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
 
     // Check if already loaded
     if (window.fileAsyncCache.hasOwnProperty(mappingKey)) return callback();
-    console.log('load', mappingKey);
 
     // Show spinner
     if (!bitmap && window.setBusy) window.setBusy();
@@ -110,14 +88,15 @@ window.loadFileAsync = function(fullPath, bitmap, callback) {
 
 window.saveFile = function(filename) {
     const buf = FS.readFile('/game/' + filename);
-    const b64 = _bytesToBase64(buf);
-    localforage.setItem(namespace + filename, b64);
+    localforage.setItem(namespace + filename, buf);
 
     localforage.getItem(namespace, function(err, res) {
         if (err || !res) res = {};
         res[filename] = 1;
         localforage.setItem(namespace, res);
     });
+
+    (window.saveCloudFile || (()=>{}))(filename, buf);
 };
 
 var loadFiles = function() {
@@ -132,11 +111,16 @@ var loadFiles = function() {
             localforage.getItem(namespace + key, (err, res) => {
                 if (err) return;
 
-                const buf = _base64ToBytes(res);
-                FS.writeFile('/game/' + key, buf);
+                // Don't overwrite existing files
+                const fname = '/game/' + key;
+                if (FS.analyzePath(fname).exists) return;
+
+                FS.writeFile(fname, res);
             });
         });
     });
+
+    (window.loadCloudFiles || (()=>{}))();
 }
 
 var createDummies = function() {
@@ -183,7 +167,6 @@ function preloadList(jsonArray) {
         // Preload the asset
         FS.createPreloadedFile(path, filename, "gameasync/" + mappingValue, true, true, function() {
             window.fileAsyncCache[mappingKey] = 1;
-            console.log('preload', mappingKey);
         }, console.error, false, false, () => {
             try { FS.unlink(path + "/" + filename); } catch (err) {}
         });
@@ -237,7 +220,7 @@ function getLazyAsset(url, filename, callback) {
         pdiv.innerHTML = `${filename} - ${loaded}KB / ${total}KB`;
 
         clearTimeout(abortTimer);
-        abortTimer = setTimeout(retry, 3000);
+        abortTimer = setTimeout(retry, 10000);
     };
     xhr.open('GET', url);
     xhr.send();
@@ -248,7 +231,7 @@ function getLazyAsset(url, filename, callback) {
         pdiv.style.opacity = '0.5';
     }, 100);
 
-    abortTimer = setTimeout(retry, 3000);
+    abortTimer = setTimeout(retry, 10000);
 
     if (hideTimer) {
         clearTimeout(hideTimer);

@@ -1104,4 +1104,5 @@ var mapping = {
 "graphics/transitions/019-whorl01": "Graphics/Transitions/019-Whorl01.png?h=92f6e9a57545d15cd4b03dcb1d9c367d",
 "graphics/transitions/020-flat01": "Graphics/Transitions/020-Flat01.png?h=94dd9f75005cdc7236a0b400b71920fd",
 "graphics/windowskins/windowskin_kn": "Graphics/Windowskins/Windowskin_kn.png?h=6ad592d1b718424e634dda8f7b96aac2",
+"*/**/**/*": "*/**/**/*?h=",
 };
