@@ -431,7 +431,7 @@ target_link_libraries(${PROJECT_NAME}
 
 SET(EMS_FLAGS " -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s USE_ZLIB=1 -s USE_OGG=1 -s USE_VORBIS=1 -s USE_SDL_TTF=2 --std=c++14 -O3 -g0")
 SET(ASYNCIFY "-s ASYNCIFY=1 -s 'ASYNCIFY_IMPORTS=[\"load_file_async_js\"]'")
-#SET(ERR_FLAGS " -Werror")
+SET(ERR_FLAGS " -Wno-undefined-var-template")
 
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EMS_FLAGS} ${ERR_FLAGS} ${ASYNCIFY}")
