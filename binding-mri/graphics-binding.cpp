@@ -75,6 +75,7 @@ RB_METHOD(graphicsFrameReset)
 	return Qnil;
 }
 
+#ifdef __ANDROID__
 RB_METHOD(graphicsSendMessage)
 {
 	RB_UNUSED_PARAM;
@@ -84,12 +85,24 @@ RB_METHOD(graphicsSendMessage)
 
 	rb_get_args(argc, argv, "|ii", &command, &param RB_ARG_END);
 
-#ifdef __ANDROID__
 	Android_JNI_SendMessage(command, param);
-#endif
 
 	return Qnil;
 }
+
+RB_METHOD(graphicsSetOverlay)
+{
+	RB_UNUSED_PARAM;
+
+	int param = 0;
+
+	rb_get_args(argc, argv, "|i", &param, &param RB_ARG_END);
+
+	Android_JNI_SendMessage(705, param);
+
+	return Qnil;
+}
+#endif
 
 #define DEF_GRA_PROP_I(PropName) \
 	RB_METHOD(graphics##Get##PropName) \
@@ -240,7 +253,11 @@ void graphicsBindingInit()
 	_rb_define_module_function(module, "freeze", graphicsFreeze);
 	_rb_define_module_function(module, "transition", graphicsTransition);
 	_rb_define_module_function(module, "frame_reset", graphicsFrameReset);
+
+#ifdef __ANDROID__
 	_rb_define_module_function(module, "send_message", graphicsSendMessage);
+	_rb_define_module_function(module, "set_overlay", graphicsSetOverlay);
+#endif
 
 	_rb_define_module_function(module, "__reset__", graphicsReset);
 
