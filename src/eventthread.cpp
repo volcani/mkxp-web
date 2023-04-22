@@ -30,7 +30,6 @@
 #include <SDL_rect.h>
 
 #include <AL/al.h>
-#include <AL/alc.h>
 
 #include "sharedstate.h"
 #include "graphics.h"
