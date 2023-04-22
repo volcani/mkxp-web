@@ -42,6 +42,10 @@
 #include <iconv.h>
 #endif
 
+#ifdef __ANDROID__
+#include <SDL_system.h>
+#endif
+
 struct SDLRWIoContext
 {
 	SDL_RWops *ops;
@@ -321,8 +325,16 @@ static void throwPhysfsError(const char *desc)
 FileSystem::FileSystem(const char *argv0,
                        bool allowSymlinks)
 {
+#ifdef __ANDROID__
+	PHYSFS_AndroidInit init;
+	init.jnienv = SDL_AndroidGetJNIEnv();
+	init.context = SDL_AndroidGetActivity();
+	if (PHYSFS_init((const char*) &init) == 0)
+		throwPhysfsError("Error initializing PhysFS for Android");
+#else
 	if (PHYSFS_init(argv0) == 0)
 		throwPhysfsError("Error initializing PhysFS");
+#endif
 
 	/* One error (=return 0) turns the whole product to 0 */
 	int er = 1;
