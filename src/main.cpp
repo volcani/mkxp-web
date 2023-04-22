@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 #ifndef WORKDIR_CURRENT
 	/* set working directory */
 #ifdef __ANDROID__
-	char *dataDir = argv[1];
+	char *dataDir = SDL_strdup(argv[1]);
 #else
 	char *dataDir = SDL_GetBasePath();
 #endif
