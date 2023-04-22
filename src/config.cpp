@@ -191,7 +191,7 @@ void Config::read(int argc, char *argv[])
 
 	PO_DESC_ALL;
 	gameFolder = "game";
-	fixedFramerate = -1;
+	fixedFramerate = 40;
 	syncToRefreshrate = false;
 	rgssVersion = 1;
 	defScreenW = 640;
@@ -199,24 +199,24 @@ void Config::read(int argc, char *argv[])
 	enableBlitting = false;
 	winResizable = false;
 	windowTitle = "MKXP";
-	frameSkip = false;
+	frameSkip = true;
 
 #ifdef __ANDROID__
 	// argv[1] is the game folder
 	gameFolder = argv[1];
-	Debug() << "Game folder: " << gameFolder;
+	Debug() << "android-mkxp: game folder: " << gameFolder;
 
 	// Split argv[2] at commas to get the RTP paths
 	std::stringstream ss(argv[2]);
 	std::string item;
 	while (std::getline(ss, item, ',')) {
-		Debug() << "RTP path: " << item;
+		Debug() << "android-mkxp: RTP path: " << item;
 		rtps.push_back(item);
 	}
 
 	// argv[3] is the Scripts path
 	game.scripts = argv[3];
-	Debug() << "Scripts path: " << game.scripts;
+	Debug() << "android-mkxp: scripts path: " << game.scripts;
 #endif
 
 #undef PO_DESC
