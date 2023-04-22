@@ -25,6 +25,10 @@
 #include "binding-types.h"
 #include "exception.h"
 
+#ifdef __ANDROID__
+extern "C" int Android_JNI_SendMessage(int command, int param);
+#endif
+
 RB_METHOD(graphicsUpdate)
 {
 	RB_UNUSED_PARAM;
@@ -63,6 +67,22 @@ RB_METHOD(graphicsFrameReset)
 	RB_UNUSED_PARAM;
 
 	shState->graphics().frameReset();
+
+	return Qnil;
+}
+
+RB_METHOD(graphicsSendMessage)
+{
+	RB_UNUSED_PARAM;
+
+	int command = 0;
+	int param = 0;
+
+	rb_get_args(argc, argv, "|ii", &command, &param RB_ARG_END);
+
+#ifdef __ANDROID__
+	Android_JNI_SendMessage(command, param);
+#endif
 
 	return Qnil;
 }
@@ -216,6 +236,7 @@ void graphicsBindingInit()
 	_rb_define_module_function(module, "freeze", graphicsFreeze);
 	_rb_define_module_function(module, "transition", graphicsTransition);
 	_rb_define_module_function(module, "frame_reset", graphicsFrameReset);
+	_rb_define_module_function(module, "send_message", graphicsSendMessage);
 
 	_rb_define_module_function(module, "__reset__", graphicsReset);
 
