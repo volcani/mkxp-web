@@ -201,91 +201,24 @@ void Config::read(int argc, char *argv[])
 	windowTitle = "MKXP";
 	frameSkip = false;
 
-#undef PO_DESC
-#undef PO_DESC_ALL
+#ifdef __ANDROID__
+	// argv[1] is the game folder
+	gameFolder = argv[1];
 
-#if 0
-// Not gonna take your shit boost
-#define GUARD_ALL( exp ) try { exp } catch(...) {}
-
-	editor.debug = false;
-	editor.battleTest = false;
-
-	/* Read arguments sent from the editor */
-	if (argc > 1)
-	{
-		std::string argv1 = argv[1];
-		/* RGSS1 uses "debug", 2 and 3 use "test" */
-		if (argv1 == "debug" || argv1 == "test")
-			editor.debug = true;
-		else if (argv1 == "btest")
-			editor.battleTest = true;
-
-		/* Fix offset */
-		if (editor.debug || editor.battleTest)
-		{
-			argc--;
-			argv++;
-		}
+	// Split argv[2] at commas to get the RTP paths
+	std::stringstream ss(argv[2]);
+	std::string item;
+	while (std::getline(ss, item, ',')) {
+		rtps.push_back(item);
 	}
 
-#define PO_DESC(key, type, def) (#key, po::value< type >()->default_value(def))
-
-	po::options_description podesc;
-	podesc.add_options()
-	        PO_DESC_ALL
-	        ("preloadScript", po::value<StringVec>()->composing())
-	        ("RTP", po::value<StringVec>()->composing())
-	        ("fontSub", po::value<StringVec>()->composing())
-	        ("rubyLoadpath", po::value<StringVec>()->composing())
-	        ;
-
-	po::variables_map vm;
-
-	/* Parse command line options */
-	try
-	{
-		po::parsed_options cmdPo =
-			po::command_line_parser(argc, argv).options(podesc).run();
-		po::store(cmdPo, vm);
-	}
-	catch (po::error &error)
-	{
-		Debug() << "Command line:" << error.what();
-	}
-
-	/* Parse configuration file */
-	SDLRWStream confFile(CONF_FILE, "r");
-
-	if (confFile)
-	{
-		try
-		{
-			po::store(po::parse_config_file(confFile.stream(), podesc, true), vm);
-			po::notify(vm);
-		}
-		catch (po::error &error)
-		{
-			Debug() << CONF_FILE":" << error.what();
-		}
-	}
-
-#undef PO_DESC
-#define PO_DESC(key, type, def) GUARD_ALL( key = vm[#key].as< type >(); )
-
-	PO_DESC_ALL;
-
-	GUARD_ALL( preloadScripts = setFromVec(vm["preloadScript"].as<StringVec>()); );
-
-	GUARD_ALL( rtps = vm["RTP"].as<StringVec>(); );
-
-	GUARD_ALL( fontSubs = vm["fontSub"].as<StringVec>(); );
-
-	GUARD_ALL( rubyLoadpaths = vm["rubyLoadpath"].as<StringVec>(); );
-
-#undef PO_DESC
-#undef PO_DESC_ALL
+	// argv[3] is the Scripts path
+	game.scripts = argv[3];
 #endif
+
+#undef PO_DESC
+#undef PO_DESC_ALL
+
 	preloadScripts.insert("win32_wrap.rb");
 
 	rgssVersion = clamp(rgssVersion, 0, 3);
@@ -319,7 +252,6 @@ static void setupScreenSize(Config &conf)
 
 void Config::readGameINI()
 {
-
 	if (!customScript.empty())
 	{
 		game.title = baseName(customScript);
@@ -331,43 +263,17 @@ void Config::readGameINI()
 
 		return;
 	}
-#if 0
-	po::options_description podesc;
-	podesc.add_options()
-	        ("Game.Title", po::value<std::string>())
-	        ("Game.Scripts", po::value<std::string>())
-	        ;
 
-	po::variables_map vm;
+#ifdef __ANDROID__
+	return;
 #endif
 
 	std::string iniFilename = execName + ".ini";
 	SDLRWStream iniFile(iniFilename.c_str(), "r");
-#if 0
-	if (iniFile)
-	{
-		try
-		{
-			po::store(po::parse_config_file(iniFile.stream(), podesc, true), vm);
-			po::notify(vm);
-		}
-		catch (po::error &error)
-		{
-			Debug() << iniFilename + ":" << error.what();
-		}
-	}
-	else
-	{
-		Debug() << "FAILED to open" << iniFilename;
-	}
 
-	GUARD_ALL( game.title = vm["Game.Title"].as<std::string>(); );
-	GUARD_ALL( game.scripts = vm["Game.Scripts"].as<std::string>(); );
-#endif
 	game.scripts = "Data/Scripts.rxdata";
-
-
 	strReplace(game.scripts, '\\', '/');
+
 #ifdef INI_ENCODING
 	/* Can add more later */
 	const char *languages[] =
