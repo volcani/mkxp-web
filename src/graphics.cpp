@@ -662,10 +662,6 @@ void Graphics::update()
 	p->checkShutDownReset();
 	p->checkSyncLock();
 
-#ifdef __EMSCRIPTEN__
-	shState->audio().update();
-#endif
-
 	if (p->frozen)
 		return;
 

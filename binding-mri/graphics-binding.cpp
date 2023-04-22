@@ -35,6 +35,10 @@ RB_METHOD(graphicsUpdate)
 
 	shState->graphics().update();
 
+#ifdef __EMSCRIPTEN__
+	shState->audio().update();
+#endif
+
 	return Qnil;
 }
 
