@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
 	/* Start event processing */
 	eventThread.process(rtData);
 
-#ifndef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
 	/* Start RGSS thread */
 	rgssThreadFun(&rtData);
 #endif
