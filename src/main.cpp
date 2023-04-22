@@ -216,7 +216,11 @@ int main(int argc, char *argv[])
 
 #ifndef WORKDIR_CURRENT
 	/* set working directory */
+#ifdef __ANDROID__
+	char *dataDir = argv[1];
+#else
 	char *dataDir = SDL_GetBasePath();
+#endif
 	if (dataDir)
 	{
 		int result = chdir(dataDir);
@@ -339,7 +343,7 @@ int main(int argc, char *argv[])
 	eventThread.process(rtData);
 
 	/* Start RGSS thread */
-        rgssThreadFun(&rtData);
+	rgssThreadFun(&rtData);
 
 	/* Request RGSS thread to stop */
 	rtData.rqTerm.set();
