@@ -149,10 +149,12 @@ void EventThread::process(RGSSThreadData &rtData)
 	SDL_GetWindowSize(win, &winW, &winH);
 
 	SettingsMenu *sMenu = 0;
-
-	while (SDL_PollEvent(&event))
+#ifdef __EMSCRIPTEN__
+	while (SDL_PollEvent(&event)) // non-blocking
+#else
+	while (SDL_WaitEvent(&event))
+#endif
 	{
-
 		if (sMenu && sMenu->onEvent(event))
 		{
 			if (sMenu->destroyReq())

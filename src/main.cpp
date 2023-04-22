@@ -339,11 +339,19 @@ int main(int argc, char *argv[])
 	/* Load and post key bindings */
 	rtData.bindingUpdateMsg.post(loadBindings(conf));
 
+#ifndef __EMSCRIPTEN__
+	/* Start RGSS thread */
+	SDL_Thread *rgssThread =
+	        SDL_CreateThread(rgssThreadFun, "rgss", &rtData);
+#endif
+
 	/* Start event processing */
 	eventThread.process(rtData);
 
+#ifndef __EMSCRIPTEN__
 	/* Start RGSS thread */
 	rgssThreadFun(&rtData);
+#endif
 
 	/* Request RGSS thread to stop */
 	rtData.rqTerm.set();
@@ -364,8 +372,12 @@ int main(int argc, char *argv[])
 
 	/* If RGSS thread ack'd request, wait for it to shutdown,
 	 * otherwise abandon hope and just end the process as is. */
-	if (rtData.rqTermAck);
-//		SDL_WaitThread(rgssThread, 0);
+	if (rtData.rqTermAck)
+#ifdef __EMSCRIPTEN__
+		; // No threads in emscripten
+#else
+		SDL_WaitThread(rgssThread, 0);
+#endif
 	else
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, conf.windowTitle.c_str(),
 		                         "The RGSS script seems to be stuck and mkxp will now force quit", win);
