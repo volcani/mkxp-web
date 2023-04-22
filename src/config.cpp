@@ -204,16 +204,19 @@ void Config::read(int argc, char *argv[])
 #ifdef __ANDROID__
 	// argv[1] is the game folder
 	gameFolder = argv[1];
+	Debug() << "Game folder: " << gameFolder;
 
 	// Split argv[2] at commas to get the RTP paths
 	std::stringstream ss(argv[2]);
 	std::string item;
 	while (std::getline(ss, item, ',')) {
+		Debug() << "RTP path: " << item;
 		rtps.push_back(item);
 	}
 
 	// argv[3] is the Scripts path
 	game.scripts = argv[3];
+	Debug() << "Scripts path: " << game.scripts;
 #endif
 
 #undef PO_DESC
