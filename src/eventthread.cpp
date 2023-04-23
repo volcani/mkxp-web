@@ -382,6 +382,14 @@ void EventThread::process(RGSSThreadData &rtData)
 			i = event.tfinger.fingerId;
 			touchState.fingers[i].x = event.tfinger.x * winW;
 			touchState.fingers[i].y = event.tfinger.y * winH;
+
+#ifdef MKXP_EMULATE_TOUCH_MOUSE
+			if (i == 0)
+			{
+				mouseState.x = touchState.fingers[i].x;
+				mouseState.y = touchState.fingers[i].y;
+			}
+#endif
 			break;
 
 		case SDL_FINGERUP :
