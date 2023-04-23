@@ -59,6 +59,10 @@ public:
 	int mouseX();
 	int mouseY();
 
+	int hasTouch();
+	int touchX(int finger);
+	int touchY(int finger);
+
 private:
 	Input(const RGSSThreadData &rtData);
 	~Input();

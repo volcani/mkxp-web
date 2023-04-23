@@ -372,6 +372,12 @@ void EventThread::process(RGSSThreadData &rtData)
 			i = event.tfinger.fingerId;
 			touchState.fingers[i].down = true;
 
+#ifdef MKXP_EMULATE_TOUCH_MOUSE
+			// Somewhat ugly hack to make sure the first finger is
+			// always the one that's used for mouse emulation
+			if (i == 0) mouseState.buttons[SDL_BUTTON_LEFT] = true;
+#endif
+
 		case SDL_FINGERMOTION :
 			i = event.tfinger.fingerId;
 			touchState.fingers[i].x = event.tfinger.x * winW;
@@ -381,6 +387,10 @@ void EventThread::process(RGSSThreadData &rtData)
 		case SDL_FINGERUP :
 			i = event.tfinger.fingerId;
 			memset(&touchState.fingers[i], 0, sizeof(touchState.fingers[0]));
+
+#ifdef MKXP_EMULATE_TOUCH_MOUSE
+			if (i == 0) mouseState.buttons[SDL_BUTTON_LEFT] = false;
+#endif
 			break;
 
 		default :

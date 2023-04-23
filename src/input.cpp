@@ -663,6 +663,10 @@ int Input::dir8Value()
 
 int Input::mouseX()
 {
+#ifdef MKXP_EMULATE_TOUCH_MOUSE
+	if (hasTouch()) return touchX(0);
+#endif
+
 	RGSSThreadData &rtData = shState->rtData();
 
 	return (EventThread::mouseState.x - rtData.screenOffset.x) * rtData.sizeResoRatio.x;
@@ -670,9 +674,33 @@ int Input::mouseX()
 
 int Input::mouseY()
 {
+#ifdef MKXP_EMULATE_TOUCH_MOUSE
+	if (hasTouch()) return touchY(0);
+#endif
+
 	RGSSThreadData &rtData = shState->rtData();
 
 	return (EventThread::mouseState.y - rtData.screenOffset.y) * rtData.sizeResoRatio.y;
+}
+
+int Input::hasTouch()
+{
+	// TODO: multi-touch support
+	return EventThread::touchState.fingers[0].down;
+}
+
+int Input::touchX(int finger)
+{
+	RGSSThreadData &rtData = shState->rtData();
+
+	return (EventThread::touchState.fingers[finger].x - rtData.screenOffset.x) * rtData.sizeResoRatio.x;
+}
+
+int Input::touchY(int finger)
+{
+	RGSSThreadData &rtData = shState->rtData();
+
+	return (EventThread::touchState.fingers[finger].y - rtData.screenOffset.y) * rtData.sizeResoRatio.y;
 }
 
 Input::~Input()
