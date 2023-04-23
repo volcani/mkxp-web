@@ -664,8 +664,7 @@ int Input::dir8Value()
 int Input::mouseX()
 {
 #ifdef MKXP_EMULATE_TOUCH_MOUSE
-	if (hasTouch()) return touchX(0);
-	else return -1;
+	return hasTouch() ? touchX(0) : -1;
 #endif
 
 	RGSSThreadData &rtData = shState->rtData();
@@ -676,8 +675,7 @@ int Input::mouseX()
 int Input::mouseY()
 {
 #ifdef MKXP_EMULATE_TOUCH_MOUSE
-	if (hasTouch()) return touchY(0);
-	else return -1;
+	return hasTouch() ? touchY(0) : -1;
 #endif
 
 	RGSSThreadData &rtData = shState->rtData();
