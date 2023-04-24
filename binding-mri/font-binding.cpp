@@ -314,15 +314,7 @@ fontBindingInit()
 	INIT_PROP_BIND(Font, Bold, "bold");
 	INIT_PROP_BIND(Font, Italic, "italic");
 	INIT_PROP_BIND(Font, Color, "color");
-
-	if (rgssVer >= 2)
-	{
 	INIT_PROP_BIND(Font, Shadow, "shadow");
-	}
-
-	if (rgssVer >= 3)
-	{
 	INIT_PROP_BIND(Font, Outline, "outline");
 	INIT_PROP_BIND(Font, OutColor, "out_color");
-	}
 }
