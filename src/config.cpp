@@ -201,6 +201,9 @@ void Config::read(int argc, char *argv[])
 	windowTitle = "MKXP";
 	frameSkip = true;
 
+	editor.battleTest = false;
+	editor.debug = false;
+
 #ifdef __ANDROID__
 	// argv[1] is the game folder
 	gameFolder = argv[1];
