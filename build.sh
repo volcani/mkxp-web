@@ -19,7 +19,7 @@ cd deps
 # Get libsigc++
 if [ ! -d "libsigc++" ]
 then
-    wget https://github.com/libsigcplusplus/libsigcplusplus/releases/download/2.10.4/libsigc++-2.10.4.tar.xz -O libsigc++.tar.xz
+    wget https://github.com/libsigcplusplus/libsigcplusplus/releases/download/2.12.0/libsigc++-2.12.0.tar.xz -O libsigc++.tar.xz
     tar xf libsigc++.tar.xz && rm libsigc++.tar.xz
     mv libsigc++* libsigc++
 fi
@@ -27,7 +27,7 @@ fi
 # Get pixman
 if [ ! -d "pixman" ]
 then
-    wget https://www.cairographics.org/releases/pixman-0.40.0.tar.gz -O pixman.tar.gz
+    wget https://www.cairographics.org/releases/pixman-0.42.0.tar.gz -O pixman.tar.gz
     tar xf pixman.tar.gz && rm pixman.tar.gz
     mv pixman* pixman
 fi
