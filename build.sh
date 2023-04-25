@@ -70,7 +70,7 @@ then
     emconfigure ./autogen.sh
     emconfigure ./configure --enable-static --disable-shared
     emmake make clean
-    emmake make -j4
+    emmake make -j4 || true
     cd ..
 fi
 
