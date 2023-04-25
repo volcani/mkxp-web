@@ -526,7 +526,13 @@ static void showExc(VALUE exc, const BacktraceData &btData)
 	/* omit "useless" last entry (from ruby:1:in `eval') */
 	for (long i = 1, btlen = RARRAY_LEN(bt) - 1; i < btlen; ++i)
 		rb_str_catf(ds, "\n\tfrom %" PRIsVALUE, rb_ary_entry(bt, i));
-	Debug() << StringValueCStr(ds);
+
+#ifdef __ANDROID__
+	Debug(ANDROID_LOG_ERROR)
+#else		
+	Debug()
+#endif
+	<< StringValueCStr(ds);
 
 	char *s = RSTRING_PTR(bt0);
 

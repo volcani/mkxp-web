@@ -35,9 +35,17 @@
 
 class Debug
 {
+private:
+	int level;
+
 public:
-	Debug()
+#ifdef __ANDROID__
+	Debug(int level=ANDROID_LOG_DEBUG)
+#else
+	Debug(int level=0)
+#endif
 	{
+		this->level = level;
 		buf << std::boolalpha;
 	}
 
@@ -62,7 +70,7 @@ public:
 	~Debug()
 	{
 #ifdef __ANDROID__
-		__android_log_write(ANDROID_LOG_DEBUG, "mkxp", buf.str().c_str());
+		__android_log_write(this->level, "mkxp", buf.str().c_str());
 #else
 		std::cerr << buf.str() << std::endl;
 #endif
