@@ -279,6 +279,7 @@ void Config::readGameINI()
 
 	game.scripts = "Data/Scripts.rxdata";
 	strReplace(game.scripts, '\\', '/');
+	game.title = "mkxp";
 
 #ifdef INI_ENCODING
 	/* Can add more later */
