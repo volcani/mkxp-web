@@ -196,7 +196,7 @@ void Config::read(int argc, char *argv[])
 	rgssVersion = 1;
 	defScreenW = 640;
 	defScreenH = 480;
-	enableBlitting = true;
+	enableBlitting = false;
 	winResizable = false;
 	windowTitle = "MKXP";
 	frameSkip = true;
