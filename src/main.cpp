@@ -196,7 +196,11 @@ static void setupWindowIcon(const Config &conf, SDL_Window *win)
 	}
 }
 
+#ifdef __ANDROID__
+int SDL_main(int argc, char *argv[])
+#else
 int main(int argc, char *argv[])
+#endif
 {
 	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
 	SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0");
